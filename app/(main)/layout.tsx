@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
 import { SubNav } from '../../components/SubNav';
@@ -9,7 +10,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <Header />
             <RightSidebar />
             <div className="mt-[78px] sm:mt-[72px] lg:ml-[220px]">
-                <SubNav />
+                <Suspense fallback={null}>
+                    <SubNav />
+                </Suspense>
                 {children}
                 <Footer />
             </div>

@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums (must be defined before use)
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum PriceType {
+  FREE
+  ONE_TIME
+  SUBSCRIPTION
+}
+
+enum ItemType {
+  COURSE
+  TOOL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum AdType {
+  POPUP_VIDEO
+  BANNER
+  SIDEBAR
+  SPONSORED_CONTENT
+}
+
+enum ContentSection {
+  BLOG
+  AI_RADAR
+  TOOLS_DB
+  PLAYBOOKS
+  COURSES
+}
+
+// User & Auth (managed by Supabase, synced to DB)
+model User {
+  id             String           @id @default(cuid())
+  supabaseUid    String           @unique
+  email          String           @unique
+  name           String?
+  avatarUrl      String?
+  role           UserRole         @default(USER)
+  isSubscribed   Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  purchases      Purchase[]
+  progress       CourseProgress[]
+  newsletterSubs NewsletterSub[]
+  auditLogs      AuditLog[]
+  blogPosts      BlogPost[]
+}
+
+// Blog
+model BlogPost {
+  id          String         @id @default(cuid())
+  title       String
+  slug        String         @unique
+  excerpt     String
+  content     String         // Markdown / JSON
+  coverImage  String?
+  section     ContentSection @default(BLOG)
+  category    String
+  tags        String[]       // PostgreSQL array
+  published   Boolean        @default(false)
+  aiGenerated Boolean        @default(false)
+  authorId    String
+  author      User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+// Courses
+model Course {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String
+  price       Int       // Naira (kobo) or USD (cents)
+  currency    String    @default("NGN")
+  thumbnail   String?
+  videoUrl    String?   // Cloudflare Stream ID
+  modules     Module[]
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  purchases   Purchase[]
+  progress    CourseProgress[]
+}
+
+model Module {
+  id        String   @id @default(cuid())
+  title     String
+  videoUrl  String?  // Cloudflare Stream ID
+  duration  Int      // minutes
+  order     Int
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseProgress {
+  id         String   @id @default(cuid())
+  userId     String
+  courseId   String
+  progress   Int      @default(0) // percentage
+  completed  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+// Tools
+model Tool {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String
+  price       Int      // 0 = free
+  priceType   PriceType @default(FREE)
+  category    String
+  icon        String?
+  externalUrl String?  // if off-site tool
+  accessUrl   String?  // if on-site tool (locked behind auth)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchases   Purchase[]
+}
+
+// Purchases (Courses + Tools)
+model Purchase {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType      ItemType
+  courseId      String?
+  course        Course?       @relation(fields: [courseId], references: [id])
+  toolId        String?
+  tool          Tool?         @relation(fields: [toolId], references: [id])
+  amount        Int
+  currency      String
+  status        PaymentStatus @default(PENDING)
+  paystackRef   String?       // transaction reference
+  flutterRef    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// Newsletter
+model NewsletterSub {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// Newsletter Campaign Tracking
+model NewsletterCampaign {
+  id        String   @id @default(cuid())
+  subject   String
+  content   String
+  segment   String   // 'all', 'subscribed', 'purchasers'
+  recipientCount Int
+  sentAt    DateTime @default(now())
+  status    String   @default("SENT") // SENT, FAILED
+}
+
+// Monetization (Ads & Promotions)
+model AdSlot {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "homepage-popup"
+  type        AdType
+  content     String   // HTML/image URL
+  linkUrl     String?
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(false)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// Security Audit Log
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "ADMIN_LOGIN", "BLOG_PUBLISH"
+  ip        String
+  userAgent String
+  metadata  Json?    // extra context
+  createdAt DateTime @default(now())
+}

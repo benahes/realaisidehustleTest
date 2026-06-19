@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // output: 'export', // Disabled for middleware support
+  output: 'standalone',
   trailingSlash: true,
   transpilePackages: ['motion'],
   staticPageGenerationTimeout: 120,

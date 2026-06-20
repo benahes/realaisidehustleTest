@@ -6,6 +6,7 @@ coverage/
 .env*
 !.env.example
 out/
+tsconfig.tsbuildinfo
 
 # External tooling artifacts
 Devin.exe

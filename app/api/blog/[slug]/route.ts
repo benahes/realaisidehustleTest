@@ -67,7 +67,8 @@ export async function PUT(
     if (err instanceof ZodError) return handleZodError(err);
     if (err.code === "P2025") return errorResponse("Blog not found", 404);
     console.error("[BLOG SLUG PUT]", err);
-    return errorResponse("Failed to update blog", 500);
+    const details = [err?.message || String(err)];
+    return errorResponse("Failed to update blog", 500, details);
   }
 }
 

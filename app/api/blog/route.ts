@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof ZodError) return handleZodError(err);
     if (err.code === "P2002") return errorResponse("Slug already exists", 409);
     console.error("[BLOG POST]", err);
-    const details = err?.message || String(err);
+    const details = [err?.message || String(err)];
     return errorResponse("Failed to create blog", 500, details);
   }
 }

@@ -114,7 +114,11 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
       })
       const data = await res.json()
       if (!data.success) {
-        const details = data.details ? `\n${data.details.join(', ')}` : ''
+        const details = Array.isArray(data.details)
+          ? `\n${data.details.join(', ')}`
+          : data.details
+            ? `\n${data.details}`
+            : ''
         toast(`${data.error || 'Failed to save'}${details}`, 'error')
         return
       }

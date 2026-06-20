@@ -81,7 +81,6 @@ model BlogPost {
   tags        String[]       // PostgreSQL array
   published   Boolean        @default(false)
   aiGenerated Boolean        @default(false)
-  views       Int            @default(0)
   authorId    String
   author      User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt   DateTime       @default(now())

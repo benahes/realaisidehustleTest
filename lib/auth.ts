@@ -17,6 +17,17 @@ export async function requireUser() {
 
   const dbUser = await prisma.user.findUnique({
     where: { supabaseUid: user.id },
+    select: {
+      id: true,
+      supabaseUid: true,
+      email: true,
+      name: true,
+      role: true,
+      avatarUrl: true,
+      isSubscribed: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   if (!dbUser) {

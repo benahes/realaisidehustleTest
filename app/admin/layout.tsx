@@ -22,11 +22,20 @@ const bottomNavItems = [
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [checkingAccess, setCheckingAccess] = useState(true);
 
   useEffect(() => {
+    // Wait for the auth hook to finish initializing before checking admin role
+    if (authLoading) return;
+
     const checkAccess = async () => {
+      // Not authenticated at all
+      if (!user) {
+        router.replace("/admin/login");
+        return;
+      }
+
       try {
         const res = await fetch("/api/auth/me");
         if (!res.ok) {
@@ -46,7 +55,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     };
 
     checkAccess();
-  }, [router]);
+  }, [authLoading, user, router]);
 
   const isLoginPage = pathname?.replace(/\/$/, "") === "/admin/login";
 

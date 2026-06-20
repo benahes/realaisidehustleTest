@@ -7,8 +7,6 @@ import { z } from "zod";
 
 const SettingsUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  language: z.string().min(2).max(10).optional(),
-  theme: z.string().min(1).max(20).optional(),
 });
 
 // GET /api/settings — fetch current user settings
@@ -25,8 +23,6 @@ export async function GET() {
         name: true,
         email: true,
         avatarUrl: true,
-        language: true,
-        theme: true,
       },
     });
     if (!dbUser) return errorResponse("User not found", 404);
@@ -56,7 +52,7 @@ export async function PUT(req: NextRequest) {
     const updated = await prisma.user.update({
       where: { id: dbUser.id },
       data: body,
-      select: { id: true, name: true, language: true, theme: true },
+      select: { id: true, name: true },
     });
 
     return successResponse({ settings: updated });

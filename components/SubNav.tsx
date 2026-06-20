@@ -78,7 +78,7 @@ export function SubNav() {
                   }`}
               >
                 {active && (
-                  <span className="w-1.5 h-1.5 bg-purple-300 rounded-full mt-0.5"></span>
+                  <span className="w-1.5 h-1.5 bg-purple-300 rounded-full"></span>
                 )}
                 {tab.label}
               </Link>
@@ -111,7 +111,7 @@ export function SubNav() {
                   }`}
               >
                 {active && (
-                  <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0 mt-0.5"></span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
                 )}
                 {tab.label}
               </Link>

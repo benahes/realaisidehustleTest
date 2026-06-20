@@ -16,8 +16,6 @@ export default function SettingsClient() {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [name, setName] = useState("");
-  const [language, setLanguage] = useState("en");
-  const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
     fetch("/api/settings/api-keys")
@@ -31,8 +29,6 @@ export default function SettingsClient() {
         if (data.success && data.data?.settings) {
           const s = data.data.settings;
           setName(s.name || "");
-          setLanguage(s.language || "en");
-          setTheme(s.theme || "dark");
         }
       })
       .catch(() => {})
@@ -46,7 +42,7 @@ export default function SettingsClient() {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, language, theme }),
+        body: JSON.stringify({ name }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -114,21 +110,10 @@ export default function SettingsClient() {
               </div>
               <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(224,182,255,0.6)]"></span>
             </div>
-            <div className="p-3 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
-              <div className="space-y-2 sm:space-y-3">
-                <label className="font-label-caps text-xs sm:text-[13px] text-on-surface-variant block uppercase tracking-widest">System Language</label>
-                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-surface-container-high border-0 border-b border-outline text-sm sm:text-[15px] px-0 py-1.5 sm:py-2 focus:ring-0 focus:border-primary outline-none">
-                  <option value="en">English (US) - Default</option>
-                  <option value="de">German (DE)</option>
-                  <option value="ja">Japanese (JP)</option>
-                </select>
-              </div>
-              <div className="space-y-2 sm:space-y-3">
-                <label className="font-label-caps text-xs sm:text-[13px] text-on-surface-variant block uppercase tracking-widest">Theme Engine</label>
-                <div className="flex gap-2">
-                  <button onClick={() => setTheme("dark")} className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-sm font-label-caps text-xs sm:text-[13px] text-center uppercase transition-colors ${theme === "dark" ? "bg-primary text-on-primary" : "bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-variant"}`}>Dark (OLED)</button>
-                  <button onClick={() => setTheme("system")} className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-sm font-label-caps text-xs sm:text-[13px] text-center uppercase transition-colors ${theme === "system" ? "bg-primary text-on-primary" : "bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-variant"}`}>System</button>
-                </div>
+            <div className="p-3 sm:p-6">
+              <div className="space-y-2 sm:space-y-3 max-w-md">
+                <label className="font-label-caps text-xs sm:text-[13px] text-on-surface-variant block uppercase tracking-widest">Display Name</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-surface-container-high border-0 border-b border-outline text-sm sm:text-[15px] px-0 py-1.5 sm:py-2 focus:ring-0 focus:border-primary outline-none" placeholder="Your name" />
               </div>
             </div>
           </section>

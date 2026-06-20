@@ -48,20 +48,24 @@ async function getRelatedPosts(currentId: string, category: string, section: str
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const blog = await getBlogPost(slug);
-  if (!blog || !blog.published) {
-    return { title: "Not Found — AI Side Hustle" };
+  try {
+    const { slug } = await params;
+    const blog = await getBlogPost(slug);
+    if (!blog || !blog.published) {
+      return { title: "Not Found — AI Side Hustle" };
+    }
+    return {
+      title: `${blog.title} — AI Side Hustle`,
+      description: blog.excerpt || blog.title,
+      openGraph: blog.coverImage
+        ? {
+            images: [{ url: blog.coverImage }],
+          }
+        : undefined,
+    };
+  } catch {
+    return { title: "Error — AI Side Hustle" };
   }
-  return {
-    title: `${blog.title} — AI Side Hustle`,
-    description: blog.excerpt || blog.title,
-    openGraph: blog.coverImage
-      ? {
-          images: [{ url: blog.coverImage }],
-        }
-      : undefined,
-  };
 }
 
 function timeAgo(dateStr: string) {

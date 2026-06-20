@@ -24,7 +24,7 @@ export function getBucketName() {
 }
 
 export function getPublicUrl(key: string) {
-  const publicUrlBase = process.env.R2_PUBLIC_URL;
+  const publicUrlBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, '');
   if (publicUrlBase) {
     return `${publicUrlBase}/${key}`;
   }

@@ -21,7 +21,6 @@ async function getBlogPost(slug: string) {
         coverImage: true,
         section: true,
         category: true,
-        tags: true,
         published: true,
         aiGenerated: true,
         authorId: true,
@@ -35,30 +34,35 @@ async function getBlogPost(slug: string) {
     return blog;
   } catch (err: any) {
     console.error("[BLOG POST GET]", err);
-    throw new Error(err?.message || String(err));
+    return null;
   }
 }
 
 async function getRelatedPosts(currentId: string, category: string, section: string) {
-  return prisma.blogPost.findMany({
-    where: {
-      published: true,
-      id: { not: currentId },
-      OR: [{ category }, { section }],
-    },
-    orderBy: { createdAt: "desc" },
-    take: 3,
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      coverImage: true,
-      category: true,
-      createdAt: true,
-      author: { select: { name: true } },
-    },
-  });
+  try {
+    return await prisma.blogPost.findMany({
+      where: {
+        published: true,
+        id: { not: currentId },
+        OR: [{ category }, { section }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        coverImage: true,
+        category: true,
+        createdAt: true,
+        author: { select: { name: true } },
+      },
+    });
+  } catch (err: any) {
+    console.error("[RELATED POSTS]", err);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {

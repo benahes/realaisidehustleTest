@@ -9,7 +9,7 @@ export default async function AdminMarketplacePage() {
 
   let courses: any[] = [];
   let tools: any[] = [];
-  let purchaseStats: any = { _sum: { amount: 0 }, _count: { id: 0 } };
+  let purchaseStats: any = { _sum: { amount: 0 }, _count: 0 };
 
   try {
     [courses, tools, purchaseStats] = await Promise.all([
@@ -44,7 +44,7 @@ export default async function AdminMarketplacePage() {
       }),
       prisma.purchase.aggregate({
         _sum: { amount: true },
-        _count: { id: true },
+        _count: true,
         where: { status: "SUCCESS" },
       }),
     ]);
@@ -53,7 +53,7 @@ export default async function AdminMarketplacePage() {
   }
 
   const totalRevenue = purchaseStats._sum.amount || 0;
-  const totalSales = purchaseStats._count.id || 0;
+  const totalSales = purchaseStats._count || 0;
 
   const assets = [
     ...courses.map((c) => ({

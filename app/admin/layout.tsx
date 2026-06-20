@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,50 +22,9 @@ const bottomNavItems = [
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
-  const [checkingAccess, setCheckingAccess] = useState(true);
-
-  useEffect(() => {
-    // Wait for the auth hook to finish initializing before checking admin role
-    if (authLoading) return;
-
-    const checkAccess = async () => {
-      // Not authenticated at all
-      if (!user) {
-        router.replace("/admin/login");
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/auth/me");
-        if (!res.ok) {
-          router.replace("/admin/login");
-          return;
-        }
-        const data = await res.json();
-        const role = data?.data?.user?.role;
-        if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-          router.replace("/admin/login");
-          return;
-        }
-        setCheckingAccess(false);
-      } catch {
-        router.replace("/admin/login");
-      }
-    };
-
-    checkAccess();
-  }, [authLoading, user, router]);
+  const { signOut } = useAuth();
 
   const isLoginPage = pathname?.replace(/\/$/, "") === "/admin/login";
-
-  if (checkingAccess && !isLoginPage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-on-surface font-body-sm">
-        Checking access...
-      </div>
-    );
-  }
 
   // Login page gets a clean centered layout without sidebar/header
   if (isLoginPage) {

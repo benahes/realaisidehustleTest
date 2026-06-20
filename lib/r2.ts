@@ -24,11 +24,9 @@ export function getBucketName() {
 }
 
 export function getPublicUrl(key: string) {
-  const publicUrlBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, '');
-  if (publicUrlBase) {
-    return `${publicUrlBase}/${key}`;
-  }
-  // Proxy through Next.js when no public URL is configured
+  // Always proxy through /api/avatar so the browser only needs to resolve
+  // the app domain. The server fetches the actual image from R2 internally.
+  // Direct .r2.dev URLs often fail client-side with ERR_NAME_NOT_RESOLVED.
   return `/api/avatar?key=${encodeURIComponent(key)}`;
 }
 

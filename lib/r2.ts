@@ -28,7 +28,7 @@ export function getPublicUrl(key: string) {
   if (publicUrlBase) {
     return `${publicUrlBase}/${key}`;
   }
-  // Proxy through Next.js to avoid R2 SSL/CORS issues
+  // Proxy through Next.js when no public URL is configured
   return `/api/avatar?key=${encodeURIComponent(key)}`;
 }
 

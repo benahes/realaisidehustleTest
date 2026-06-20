@@ -9,6 +9,11 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify R2 is configured before accepting the file
+    if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+      return errorResponse("Avatar storage is not configured on this server.", 503);
+    }
+
     const supabase = await createClient();
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 

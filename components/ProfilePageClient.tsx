@@ -39,6 +39,7 @@ export function ProfilePageClient() {
   const [fullName, setFullName] = useState("");
   const [organization, setOrganization] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +60,7 @@ export function ProfilePageClient() {
       setFullName(payload.profile.fullName || "");
       setOrganization(payload.profile.organization || "");
       setAvatarUrl(payload.profile.avatarUrl || "");
+      setAvatarError(false);
     } catch (err: any) {
       setError(err.message || "Failed to load profile");
     } finally {
@@ -79,13 +81,53 @@ export function ProfilePageClient() {
       })
     : "-";
 
+  // Resize image client-side to avoid serverless body-size limits and keep uploads fast
+  const resizeImage = (file: File, maxWidth = 400, maxHeight = 400, quality = 0.85): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round(height * (maxWidth / width));
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round(width * (maxHeight / height));
+          height = maxHeight;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Canvas export failed"));
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Failed to load image"));
+      };
+      img.src = url;
+    });
+  };
+
   const handleAvatarUpload = async (file: File) => {
     if (!file) return;
     setUploading(true);
     setError("");
     try {
+      const resized = await resizeImage(file);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", resized, file.name);
 
       const uploadRes = await fetch("/api/upload/avatar", {
         method: "POST",
@@ -168,11 +210,12 @@ export function ProfilePageClient() {
                   className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-outline-variant/40 cursor-pointer group shrink-0"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {avatarUrl ? (
+                  {avatarUrl && !avatarError ? (
                     <img
                       src={avatarUrl}
                       alt="Avatar"
                       className="w-full h-full object-cover"
+                      onError={() => setAvatarError(true)}
                     />
                   ) : (
                     <div className="w-full h-full bg-primary-container/30 flex items-center justify-center text-primary text-lg sm:text-xl font-bold">

@@ -32,37 +32,66 @@ export async function GET(_req: NextRequest) {
       })
     }
 
-    const [purchaseCount, successRevenue, courseProgressCount, newsletterSub, recentPurchases] =
-      await Promise.all([
-        prisma.purchase.count({ where: { userId: dbUser.id } }),
-        prisma.purchase.aggregate({
-          where: { userId: dbUser.id, status: 'SUCCESS' },
-          _sum: { amount: true },
-        }),
-        prisma.courseProgress.count({ where: { userId: dbUser.id } }),
-        prisma.newsletterSub.findFirst({
-          where: {
-            OR: [{ userId: dbUser.id }, { email: dbUser.email }],
-            isActive: true,
-          },
-          select: { id: true },
-        }),
-        prisma.purchase.findMany({
-          where: { userId: dbUser.id },
-          orderBy: { createdAt: 'desc' },
-          take: 8,
-          select: {
-            id: true,
-            itemType: true,
-            amount: true,
-            currency: true,
-            status: true,
-            createdAt: true,
-            course: { select: { title: true } },
-            tool: { select: { name: true } },
-          },
-        }),
-      ])
+    // Optional stats — wrapped individually so missing tables don't break the whole profile
+    let purchaseCount = 0
+    let totalRevenue = 0
+    let courseProgressCount = 0
+    let newsletterActive = false
+    let recentPurchases: any[] = []
+
+    try {
+      purchaseCount = await prisma.purchase.count({ where: { userId: dbUser.id } })
+    } catch { /* table may not exist yet */ }
+
+    try {
+      const revenueAgg = await prisma.purchase.aggregate({
+        where: { userId: dbUser.id, status: 'SUCCESS' },
+        _sum: { amount: true },
+      })
+      totalRevenue = revenueAgg._sum.amount || 0
+    } catch { /* table may not exist yet */ }
+
+    try {
+      courseProgressCount = await prisma.courseProgress.count({ where: { userId: dbUser.id } })
+    } catch { /* table may not exist yet */ }
+
+    try {
+      const sub = await prisma.newsletterSub.findFirst({
+        where: {
+          OR: [{ userId: dbUser.id }, { email: dbUser.email }],
+          isActive: true,
+        },
+        select: { id: true },
+      })
+      newsletterActive = !!sub
+    } catch { /* table may not exist yet */ }
+
+    try {
+      const purchases = await prisma.purchase.findMany({
+        where: { userId: dbUser.id },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: {
+          id: true,
+          itemType: true,
+          amount: true,
+          currency: true,
+          status: true,
+          createdAt: true,
+          course: { select: { title: true } },
+          tool: { select: { name: true } },
+        },
+      })
+      recentPurchases = purchases.map((p) => ({
+        id: p.id,
+        itemType: p.itemType,
+        itemName: p.itemType === 'COURSE' ? p.course?.title || 'Course' : p.tool?.name || 'Tool',
+        amount: p.amount,
+        currency: p.currency,
+        status: p.status,
+        createdAt: p.createdAt,
+      }))
+    } catch { /* table may not exist yet */ }
 
     return successResponse({
       profile: {
@@ -84,19 +113,11 @@ export async function GET(_req: NextRequest) {
       },
       stats: {
         purchaseCount,
-        totalRevenue: successRevenue._sum.amount || 0,
+        totalRevenue,
         courseProgressCount,
-        newsletterActive: !!newsletterSub,
+        newsletterActive,
       },
-      recentPurchases: recentPurchases.map((p) => ({
-        id: p.id,
-        itemType: p.itemType,
-        itemName: p.itemType === 'COURSE' ? p.course?.title || 'Course' : p.tool?.name || 'Tool',
-        amount: p.amount,
-        currency: p.currency,
-        status: p.status,
-        createdAt: p.createdAt,
-      })),
+      recentPurchases,
     })
   } catch (err: any) {
     console.error('[PROFILE GET]', err)

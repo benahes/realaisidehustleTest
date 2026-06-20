@@ -1,10 +1,80 @@
-'use client'
+import { prisma } from "@/lib/prisma";
 
-import { useState } from 'react'
+async function getMonetizationData() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-export default function AdminMonetizationPage() {
-  const [autoPlay, setAutoPlay] = useState(true)
-  const [closeDelay, setCloseDelay] = useState(15)
+  try {
+    const [courses, tools, purchases, adSlots, campaigns] = await Promise.all([
+      prisma.course.findMany({
+        where: { isPublished: true },
+        select: { id: true, title: true, slug: true, price: true, currency: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.tool.findMany({
+        where: { isPublished: true },
+        select: { id: true, title: true, slug: true, price: true, currency: true, priceType: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.purchase.findMany({
+        where: { status: "SUCCESS", createdAt: { gte: thirtyDaysAgo } },
+        select: { amount: true, currency: true, itemType: true },
+      }),
+      prisma.adSlot.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.newsletterCampaign.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+    ]);
+
+    const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const courseRevenue = purchases
+      .filter((p) => p.itemType === "COURSE")
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    const toolRevenue = purchases
+      .filter((p) => p.itemType === "TOOL")
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    return { courses, tools, purchases, adSlots, campaigns, totalRevenue, courseRevenue, toolRevenue };
+  } catch {
+    return { courses: [], tools: [], purchases: [], adSlots: [], campaigns: [], totalRevenue: 0, courseRevenue: 0, toolRevenue: 0 };
+  }
+}
+
+function formatCurrency(amount: number, currency: string) {
+  if (currency === "NGN") return `₦${(amount / 100).toLocaleString()}`;
+  return `$${(amount / 100).toFixed(2)}`;
+}
+
+export default async function AdminMonetizationPage() {
+  const { courses, tools, purchases, adSlots, campaigns, totalRevenue, courseRevenue, toolRevenue } =
+    await getMonetizationData();
+
+  const assets = [
+    ...courses.map((c) => ({
+      id: c.id,
+      name: c.title,
+      slug: c.slug,
+      type: "COURSE" as const,
+      priceType: "ONE_TIME" as const,
+      price: c.price,
+      currency: c.currency,
+    })),
+    ...tools.map((t) => ({
+      id: t.id,
+      name: t.title,
+      slug: t.slug,
+      type: "TOOL" as const,
+      priceType: t.priceType,
+      price: t.price,
+      currency: t.currency,
+    })),
+  ];
 
   return (
     <>
@@ -16,72 +86,48 @@ export default function AdminMonetizationPage() {
               <span className="material-symbols-outlined">inventory_2</span> Asset Inventory
             </h2>
             <div className="flex gap-2">
-              <button className="px-3 h-[28px] bg-secondary text-on-secondary font-label-caps rounded-lg hover:opacity-90 transition-opacity">EXPORT CSV</button>
-              <button className="px-3 h-[28px] bg-primary text-on-primary font-label-caps rounded-lg hover:opacity-90 transition-opacity">ADD ASSET</button>
+              <span className="text-on-surface-variant font-mono-data text-sm self-center">{assets.length} assets</span>
             </div>
           </div>
           <div className="glass overflow-hidden">
             <div className="grid grid-cols-12 bg-surface-container-high px-4 py-2 border-b border-outline-variant text-on-surface-variant font-label-caps">
               <div className="col-span-4">RESOURCE NAME</div>
-              <div className="col-span-3">TYPE / LICENSE</div>
+              <div className="col-span-3">TYPE / PRICE</div>
               <div className="col-span-3">REVENUE (L30D)</div>
               <div className="col-span-2 text-right">STATUS</div>
             </div>
             <div className="divide-y divide-outline-variant/30">
-              {/* Row 1 */}
-              <div className="grid grid-cols-12 px-4 py-3 items-center zebra-row hover:border-l-2 hover:border-primary transition-all group">
-                <div className="col-span-4">
-                  <p className="font-body-sm font-bold text-on-surface">Advanced Neural Networks Course</p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">ONSITE • EDU-0942</p>
+              {assets.length === 0 ? (
+                <div className="px-4 py-6 text-on-surface-variant text-sm text-center">
+                  No published assets yet. Create courses or tools in the marketplace.
                 </div>
-                <div className="col-span-3">
-                  <span className="bg-surface-variant px-2 py-0.5 rounded-full font-mono-data text-on-surface-variant">LIFETIME</span>
-                </div>
-                <div className="col-span-3">
-                  <p className="font-mono-data text-on-surface">₦4,250,000.00</p>
-                  <p className="text-[10px] text-primary">↑ 12.4%</p>
-                </div>
-                <div className="col-span-2 text-right">
-                  <div className="w-2 h-2 rounded-full bg-tertiary inline-block mr-1"></div>
-                  <span className="font-label-caps text-on-surface-variant">ACTIVE</span>
-                </div>
-              </div>
-              {/* Row 2 */}
-              <div className="grid grid-cols-12 px-4 py-3 items-center zebra-row hover:border-l-2 hover:border-primary transition-all group">
-                <div className="col-span-4">
-                  <p className="font-body-sm font-bold text-on-surface">Predictive Analysis Suite Pro</p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">EXTERNAL • TOOL-881</p>
-                </div>
-                <div className="col-span-3">
-                  <span className="bg-outline-variant/40 px-2 py-0.5 rounded-full font-mono-data text-on-surface-variant">SUBSCRIPTION</span>
-                </div>
-                <div className="col-span-3">
-                  <p className="font-mono-data text-on-surface">₦812,400.00</p>
-                  <p className="text-[10px] text-error">↓ 2.1%</p>
-                </div>
-                <div className="col-span-2 text-right">
-                  <div className="w-2 h-2 rounded-full bg-primary inline-block mr-1"></div>
-                  <span className="font-label-caps text-on-surface-variant">ACTIVE</span>
-                </div>
-              </div>
-              {/* Row 3 */}
-              <div className="grid grid-cols-12 px-4 py-3 items-center zebra-row hover:border-l-2 hover:border-primary transition-all group">
-                <div className="col-span-4">
-                  <p className="font-body-sm font-bold text-on-surface">Auto-ML Refactoring Plugin</p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">ONSITE • TOOL-004</p>
-                </div>
-                <div className="col-span-3">
-                  <span className="bg-surface-variant px-2 py-0.5 rounded-full font-mono-data text-on-surface-variant">SINGLE-USE</span>
-                </div>
-                <div className="col-span-3">
-                  <p className="font-mono-data text-on-surface">₦155,000.00</p>
-                  <p className="text-[10px] text-primary">↑ 44.8%</p>
-                </div>
-                <div className="col-span-2 text-right">
-                  <div className="w-2 h-2 rounded-full bg-error inline-block mr-1"></div>
-                  <span className="font-label-caps text-on-surface-variant">PENDING</span>
-                </div>
-              </div>
+              ) : (
+                assets.map((asset) => {
+                  const assetRevenue = purchases
+                    .filter((p) => p.itemType === asset.type)
+                    .reduce((sum, p) => sum + (p.amount || 0), 0);
+                  return (
+                    <div key={asset.id} className="grid grid-cols-12 px-4 py-3 items-center zebra-row hover:border-l-2 hover:border-primary transition-all group">
+                      <div className="col-span-4">
+                        <p className="font-body-sm font-bold text-on-surface">{asset.name}</p>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{asset.type} • {asset.slug}</p>
+                      </div>
+                      <div className="col-span-3">
+                        <span className="bg-surface-variant px-2 py-0.5 rounded-full font-mono-data text-on-surface-variant text-[11px]">
+                          {asset.priceType.replace("_", "-")}
+                        </span>
+                      </div>
+                      <div className="col-span-3">
+                        <p className="font-mono-data text-on-surface">{formatCurrency(assetRevenue, asset.currency)}</p>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <div className="w-2 h-2 rounded-full bg-primary inline-block mr-1"></div>
+                        <span className="font-label-caps text-on-surface-variant">ACTIVE</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </section>
@@ -147,23 +193,30 @@ export default function AdminMonetizationPage() {
             <span className="material-symbols-outlined">dynamic_feed</span> Monetization Engine
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-            {/* CTR Chart / Metrics */}
+            {/* Revenue Metrics */}
             <div className="glass p-margin-edge flex flex-col justify-between">
               <div>
                 <div className="flex justify-between">
-                  <span className="font-label-caps text-on-surface-variant">GLOBAL CPM</span>
-                  <span className="font-mono-data text-primary">₦1,420.00</span>
+                  <span className="font-label-caps text-on-surface-variant">TOTAL REVENUE (L30D)</span>
+                  <span className="font-mono-data text-primary">{formatCurrency(totalRevenue, "NGN")}</span>
                 </div>
-                <p className="font-h1 text-h1 mt-2">12.5% <span className="text-body-xs text-on-surface-variant font-normal">AVG CTR</span></p>
+                <p className="font-h1 text-h1 mt-2">{purchases.length} <span className="text-body-xs text-on-surface-variant font-normal">SUCCESSFUL SALES</span></p>
               </div>
-              <div className="h-16 flex items-end gap-1 mt-4">
-                <div className="flex-1 bg-primary/20 h-[20%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary/40 h-[45%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary/60 h-[70%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary h-[100%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary/80 h-[85%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary/50 h-[60%] rounded-t-sm"></div>
-                <div className="flex-1 bg-primary/30 h-[30%] rounded-t-sm"></div>
+              <div className="space-y-2 mt-4">
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant">Courses</span>
+                  <span className="font-mono-data text-primary">{formatCurrency(courseRevenue, "NGN")}</span>
+                </div>
+                <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full" style={{ width: totalRevenue > 0 ? `${(courseRevenue / totalRevenue) * 100}%` : "0%" }}></div>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant">Tools</span>
+                  <span className="font-mono-data text-secondary">{formatCurrency(toolRevenue, "NGN")}</span>
+                </div>
+                <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-secondary h-full" style={{ width: totalRevenue > 0 ? `${(toolRevenue / totalRevenue) * 100}%` : "0%" }}></div>
+                </div>
               </div>
             </div>
             {/* Pop-up Video Config */}
@@ -175,21 +228,11 @@ export default function AdminMonetizationPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-body-xs">Auto-play on Load</span>
-                  <button
-                    onClick={() => setAutoPlay((v) => !v)}
-                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoPlay ? 'bg-primary' : 'bg-surface-container-high'}`}
-                  >
-                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${autoPlay ? 'right-1' : 'left-1'}`}></div>
-                  </button>
+                  <span className="font-mono-data text-[11px] text-primary">ENABLED</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-body-xs">Close Delay (sec)</span>
-                  <input
-                    className="w-12 bg-surface-container-low border-b border-outline-variant text-center font-mono-data py-0.5"
-                    type="number"
-                    value={closeDelay}
-                    onChange={(e) => setCloseDelay(Number(e.target.value))}
-                  />
+                  <span className="font-mono-data text-[11px] text-on-surface">5</span>
                 </div>
                 <div className="pt-2">
                   <p className="text-[10px] text-on-surface-variant mb-1">CAMPAIGN WEIGHTING</p>
@@ -219,76 +262,72 @@ export default function AdminMonetizationPage() {
           </div>
         </section>
 
-        {/* SECTION 4: PROMOTED QUEUE (ASKEW / OVERLAY STYLE) */}
+        {/* SECTION 4: AD SLOTS & CAMPAIGNS */}
         <section className="col-span-12 lg:col-span-12 space-y-gutter pb-10">
           <div className="flex items-center justify-between">
             <h2 className="font-h2 text-h2 text-primary flex items-center gap-2">
-              <span className="material-symbols-outlined">rocket_launch</span> Promoted Content Queue
-              <span className="bg-primary px-2 py-0.5 rounded-full text-[10px] font-bold text-on-primary">6 WAITING</span>
+              <span className="material-symbols-outlined">rocket_launch</span> Ad Slots & Campaigns
+              <span className="bg-primary px-2 py-0.5 rounded-full text-[10px] font-bold text-on-primary">{adSlots.length} slots</span>
             </h2>
           </div>
-          <div className="flex overflow-x-auto gap-gutter pb-4 snap-x">
-            {/* Queue Card 1 */}
-            <div className="min-w-[320px] glass p-margin-edge snap-start border-l-4 border-l-primary hover:bg-surface-variant/40 transition-colors">
-              <div className="flex justify-between mb-3">
-                <span className="font-label-caps text-on-surface-variant">SLOT #1 - TOP TIER</span>
-                <span className="font-mono-data text-tertiary">₦50,000/Day</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">psychology</span>
-                </div>
-                <div>
-                  <h3 className="font-body-sm font-bold">DeepMind API Wrapper</h3>
-                  <p className="text-body-xs text-on-surface-variant">By DevPulse Lagos</p>
-                </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button className="flex-1 h-[28px] bg-primary text-on-primary font-label-caps rounded hover:brightness-110">APPROVE</button>
-                <button className="flex-1 h-[28px] border border-outline-variant font-label-caps rounded hover:bg-surface-variant">DECLINE</button>
-              </div>
+          {adSlots.length === 0 && campaigns.length === 0 ? (
+            <div className="glass p-6 text-on-surface-variant text-sm text-center">
+              No ad slots or campaigns configured yet.
             </div>
-            {/* Queue Card 2 */}
-            <div className="min-w-[320px] glass p-margin-edge snap-start border-l-4 border-l-secondary/50 hover:bg-surface-variant/40 transition-colors">
-              <div className="flex justify-between mb-3">
-                <span className="font-label-caps text-on-surface-variant">SLOT #2 - SIDEBAR</span>
-                <span className="font-mono-data text-tertiary">₦12,500/Day</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center">
-                  <span className="material-symbols-outlined text-secondary">database</span>
+          ) : (
+            <div className="flex overflow-x-auto gap-gutter pb-4 snap-x">
+              {adSlots.map((slot) => (
+                <div key={slot.id} className="min-w-[280px] glass p-margin-edge snap-start border-l-4 border-l-primary hover:bg-surface-variant/40 transition-colors">
+                  <div className="flex justify-between mb-3">
+                    <span className="font-label-caps text-on-surface-variant">{slot.section.replace("_", "-")} • {slot.type}</span>
+                    <span className="font-mono-data text-tertiary">{slot.price ? `₦${slot.price.toLocaleString()}/Day` : "FREE"}</span>
+                  </div>
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary">ads_click</span>
+                    </div>
+                    <div>
+                      <h3 className="font-body-sm font-bold">{slot.title || "Untitled Slot"}</h3>
+                      <p className="text-body-xs text-on-surface-variant">{slot.advertiserEmail || "No advertiser"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <span className={`flex-1 h-[28px] flex items-center justify-center font-label-caps rounded text-[11px] ${slot.isActive ? "bg-primary text-on-primary" : "bg-surface-variant text-on-surface-variant"}`}>
+                      {slot.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                    <span className="flex-1 h-[28px] flex items-center justify-center font-label-caps rounded text-[11px] bg-surface-variant text-on-surface-variant">
+                      {slot.startDate ? new Date(slot.startDate).toLocaleDateString() : "NO DATE"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-body-sm font-bold">VectorDB Nigerian Nodes</h3>
-                  <p className="text-body-xs text-on-surface-variant">By CloudRoute</p>
+              ))}
+              {campaigns.map((campaign) => (
+                <div key={campaign.id} className="min-w-[280px] glass p-margin-edge snap-start border-l-4 border-l-secondary/50 hover:bg-surface-variant/40 transition-colors">
+                  <div className="flex justify-between mb-3">
+                    <span className="font-label-caps text-on-surface-variant">CAMPAIGN</span>
+                    <span className="font-mono-data text-tertiary">{campaign.sentAt ? "SENT" : "DRAFT"}</span>
+                  </div>
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center">
+                      <span className="material-symbols-outlined text-secondary">mail</span>
+                    </div>
+                    <div>
+                      <h3 className="font-body-sm font-bold">{campaign.subject}</h3>
+                      <p className="text-body-xs text-on-surface-variant">{campaign.recipientCount || 0} recipients</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <span className="flex-1 h-[28px] flex items-center justify-center font-label-caps rounded text-[11px] bg-surface-variant text-on-surface-variant">
+                      {campaign.openRate ? `${campaign.openRate}% open` : "N/A"}
+                    </span>
+                    <span className="flex-1 h-[28px] flex items-center justify-center font-label-caps rounded text-[11px] bg-surface-variant text-on-surface-variant">
+                      {campaign.clickRate ? `${campaign.clickRate}% click` : "N/A"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button className="flex-1 h-[28px] bg-primary text-on-primary font-label-caps rounded hover:brightness-110">APPROVE</button>
-                <button className="flex-1 h-[28px] border border-outline-variant font-label-caps rounded hover:bg-surface-variant">DECLINE</button>
-              </div>
+              ))}
             </div>
-            {/* Queue Card 3 */}
-            <div className="min-w-[320px] glass p-margin-edge snap-start border-l-4 border-l-secondary/50 hover:bg-surface-variant/40 transition-colors">
-              <div className="flex justify-between mb-3">
-                <span className="font-label-caps text-on-surface-variant">SLOT #3 - IN-LINE</span>
-                <span className="font-mono-data text-tertiary">₦8,000/Day</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 bg-surface-container-high rounded flex items-center justify-center">
-                  <span className="material-symbols-outlined text-secondary">code_blocks</span>
-                </div>
-                <div>
-                  <h3 className="font-body-sm font-bold">SQL Optimizer AI</h3>
-                  <p className="text-body-xs text-on-surface-variant">By QueryMaster</p>
-                </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button className="flex-1 h-[28px] bg-primary text-on-primary font-label-caps rounded hover:brightness-110">APPROVE</button>
-                <button className="flex-1 h-[28px] border border-outline-variant font-label-caps rounded hover:bg-surface-variant">DECLINE</button>
-              </div>
-            </div>
-          </div>
+          )}
         </section>
       </div>
 

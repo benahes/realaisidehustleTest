@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowUpRight, TrendingUp, LayoutGrid, List, Star, ArrowRight } from "lucide-react";
 
 interface BlogPost {
@@ -49,20 +50,42 @@ function getDisplayName(name: string | null, email: string) {
 export default function BlogHomeClient() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/blog?limit=20")
+  const fetchPosts = (pageNum: number, append = false) => {
+    const promise = pageNum === 1 && !append ? setLoading(true) : setLoadingMore(true);
+    fetch(`/api/blog?limit=12&page=${pageNum}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setPosts(data.data.blogs);
+        if (data.success) {
+          const newPosts = data.data.blogs || [];
+          setPosts((prev) => (append ? [...prev, ...newPosts] : newPosts));
+          setHasMore(data.data.page < data.data.pages);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setLoadingMore(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchPosts(1, false);
   }, []);
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchPosts(nextPage, true);
+  };
 
   const featured = posts[0];
   const trending = posts.slice(1, 4);
   const latest = posts.slice(1, 4);
   const editorsPicks = posts.slice(4, 7);
+  const morePosts = posts.slice(7);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5">
@@ -71,7 +94,7 @@ export default function BlogHomeClient() {
         {loading ? (
           <section className="col-span-12 lg:col-span-8 bg-surface-container border border-outline-variant/30 rounded min-h-[200px] sm:min-h-[350px] animate-pulse" />
         ) : featured ? (
-          <section className="col-span-12 lg:col-span-8 group relative overflow-hidden bg-surface-container border border-outline-variant/30 rounded cursor-pointer min-h-[200px] sm:min-h-[350px] shadow-lg">
+          <Link href={`/blog/${featured.slug}`} className="col-span-12 lg:col-span-8 group relative overflow-hidden bg-surface-container border border-outline-variant/30 rounded cursor-pointer min-h-[200px] sm:min-h-[350px] shadow-lg block">
             <Image fill alt={featured.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               src={featured.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} referrerPolicy="no-referrer" />
             <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent pointer-events-none z-10" />
@@ -88,7 +111,7 @@ export default function BlogHomeClient() {
                 <ArrowUpRight className="w-5 h-5" />
               </div>
             </div>
-          </section>
+          </Link>
         ) : (
           <section className="col-span-12 lg:col-span-8 flex items-center justify-center bg-surface-container border border-outline-variant/30 rounded min-h-[200px] sm:min-h-[350px]">
             <p className="text-on-surface-variant text-sm">No featured posts yet.</p>
@@ -110,7 +133,7 @@ export default function BlogHomeClient() {
               </div>
             ) : trending.length > 0 ? (
               trending.map((post, i) => (
-                <div key={post.id} className="zebra-row px-2 py-1 sm:px-3 sm:py-3 border-b border-outline-variant/10 hover:bg-slate-800/30 transition-colors cursor-pointer group">
+                <Link href={`/blog/${post.slug}`} key={post.id} className="zebra-row px-2 py-1 sm:px-3 sm:py-3 border-b border-outline-variant/10 hover:bg-slate-800/30 transition-colors cursor-pointer group block">
                   <div className="flex gap-2 sm:gap-3">
                     <span className="font-mono-data text-base sm:text-lg text-outline/30 group-hover:text-primary/50 transition-colors">0{i + 1}</span>
                     <div>
@@ -122,7 +145,7 @@ export default function BlogHomeClient() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="p-4 text-on-surface-variant text-sm">No trending posts yet.</div>
@@ -161,7 +184,7 @@ export default function BlogHomeClient() {
             ))
           ) : latest.length > 0 ? (
             latest.map((post) => (
-              <div key={post.id} className="flex flex-col bg-surface-container border border-outline-variant/20 rounded hover:border-primary/50 transition-all group cursor-pointer">
+              <Link href={`/blog/${post.slug}`} key={post.id} className="flex flex-col bg-surface-container border border-outline-variant/20 rounded hover:border-primary/50 transition-all group cursor-pointer">
                 <div className="h-28 sm:aspect-video sm:h-auto w-full overflow-hidden relative">
                   <Image fill alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     src={post.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} referrerPolicy="no-referrer" />
@@ -182,7 +205,7 @@ export default function BlogHomeClient() {
                     <span className="text-xs sm:text-sm font-mono-data text-outline">{timeAgo(post.createdAt)}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <div className="col-span-full flex items-center justify-center py-12 text-on-surface-variant text-sm">
@@ -206,7 +229,7 @@ export default function BlogHomeClient() {
         ) : editorsPicks.length > 0 ? (
           <div className="flex flex-col gap-1">
             {editorsPicks.map((post, i) => (
-              <div key={post.id} className="zebra-row flex items-center justify-between p-1.5 sm:p-2 rounded group cursor-pointer hover:bg-primary/10 transition-colors">
+              <Link href={`/blog/${post.slug}`} key={post.id} className="zebra-row flex items-center justify-between p-1.5 sm:p-2 rounded group cursor-pointer hover:bg-primary/10 transition-colors">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <span className={`w-2 h-2 rounded-full ${i < 2 ? "bg-primary" : "bg-outline/20"}`} />
                   <div className="flex flex-col min-w-0">
@@ -220,13 +243,70 @@ export default function BlogHomeClient() {
                 <div className="hidden md:flex items-center gap-stack-loose shrink-0">
                   <span className="text-outline group-hover:text-primary transition-colors text-xs sm:text-sm ml-2"><ArrowRight className="w-4 h-4" /></span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
           <p className="text-on-surface-variant text-sm py-4">No editor&apos;s picks yet.</p>
         )}
       </section>
+
+      {/* More Posts */}
+      {(loading || morePosts.length > 0) && (
+        <section className="mt-stack-mid">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-h2 text-base sm:text-lg text-white uppercase tracking-tight">More Posts</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+            {loading && !loadingMore
+              ? [1, 2, 3].map((n) => (
+                  <div key={n} className="flex flex-col bg-surface-container border border-outline-variant/20 rounded animate-pulse">
+                    <div className="h-28 sm:aspect-video sm:h-auto w-full bg-surface-container-high" />
+                    <div className="p-2 sm:p-4 flex-grow flex flex-col gap-2">
+                      <div className="h-4 bg-surface-container-high rounded w-3/4" />
+                      <div className="h-3 bg-surface-container-high rounded w-full" />
+                      <div className="h-3 bg-surface-container-high rounded w-2/3" />
+                    </div>
+                  </div>
+                ))
+              : morePosts.map((post) => (
+                  <Link href={`/blog/${post.slug}`} key={post.id} className="flex flex-col bg-surface-container border border-outline-variant/20 rounded hover:border-primary/50 transition-all group cursor-pointer">
+                    <div className="h-28 sm:aspect-video sm:h-auto w-full overflow-hidden relative">
+                      <Image fill alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        src={post.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} referrerPolicy="no-referrer" />
+                      <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md px-1.5 py-0.5 rounded-sm">
+                        <span className="text-xs sm:text-sm font-label-caps text-primary uppercase">{post.category}</span>
+                      </div>
+                    </div>
+                    <div className="p-2 sm:p-4 flex-grow flex flex-col">
+                      <h3 className="font-h2 text-sm sm:text-base text-white group-hover:text-primary transition-colors line-clamp-2 mb-1 uppercase tracking-tight">{post.title}</h3>
+                      <p className="font-body-xs text-on-surface-variant line-clamp-2 mb-2 sm:mb-3 text-xs sm:text-sm">{post.excerpt}</p>
+                      <div className="mt-auto flex items-center justify-between pt-2 sm:pt-3 border-t border-outline-variant/10">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span className="text-xs sm:text-sm font-mono-data text-primary">{getInitials(post.author?.name || null, post.author?.email || "AU")}</span>
+                          </div>
+                          <span className="text-xs sm:text-sm font-mono-data text-outline">{getDisplayName(post.author?.name || null, post.author?.email || "AUTHOR")}</span>
+                        </div>
+                        <span className="text-xs sm:text-sm font-mono-data text-outline">{timeAgo(post.createdAt)}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center mt-4 sm:mt-6">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-6 py-2.5 bg-primary-container text-white font-label-caps text-xs sm:text-sm uppercase tracking-widest rounded hover:brightness-110 transition-all disabled:opacity-50"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 }

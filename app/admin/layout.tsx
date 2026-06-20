@@ -77,30 +77,30 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background text-on-surface font-body-sm overflow-x-hidden selection:bg-primary-container selection:text-white">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-64 z-[60] bg-surface-container-lowest border-r border-outline-variant flex flex-col h-full py-stack-loose custom-scrollbar overflow-y-auto">
-        <div className="px-margin-edge mb-stack-loose">
-          <h1 className="font-h1 text-h1 text-primary tracking-tight">
+      <aside className="fixed left-0 top-0 bottom-0 w-64 z-[60] bg-surface-container-lowest border-r border-outline-variant flex flex-col h-full py-4 custom-scrollbar overflow-y-auto">
+        <div className="px-margin-edge mb-3">
+          <h1 className="font-h1 text-xl text-primary tracking-tight leading-tight">
             Synthetic Index
           </h1>
-          <p className="font-body-xs text-on-surface-variant opacity-70">
+          <p className="font-body-xs text-on-surface-variant opacity-70 leading-none">
             Admin Terminal
           </p>
         </div>
-        <nav className="flex-1 px-stack-mid space-y-unit">
+        <nav className="flex-1 px-stack-mid space-y-1">
           {mainNavItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 group cursor-pointer transition-all duration-150 ${
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-md group cursor-pointer transition-all duration-150 ${
                   active
                     ? "bg-primary-container text-on-primary-container border-l-2 border-primary font-body-sm"
                     : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-body-sm"
                 }`}
               >
                 <span
-                  className="material-symbols-outlined"
+                  className="material-symbols-outlined text-[18px]"
                   data-icon={item.icon}
                 >
                   {item.icon}
@@ -110,14 +110,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto pt-stack-loose border-t border-outline-variant px-stack-mid space-y-unit">
+        <div className="mt-auto pt-3 border-t border-outline-variant px-stack-mid space-y-1">
           {bottomNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low cursor-pointer transition-all duration-150"
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low cursor-pointer transition-all duration-150"
             >
-              <span className="material-symbols-outlined" data-icon={item.icon}>
+              <span className="material-symbols-outlined text-[18px]" data-icon={item.icon}>
                 {item.icon}
               </span>
               <span className="font-body-sm">{item.label}</span>
@@ -133,9 +133,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 // no-op
               }
             }}
-            className="flex items-center gap-3 px-4 py-2 text-error hover:text-error hover:bg-error/10 cursor-pointer transition-all duration-150 w-full text-left"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-error hover:text-error hover:bg-error/10 cursor-pointer transition-all duration-150 w-full text-left"
           >
-            <span className="material-symbols-outlined" data-icon="logout">
+            <span className="material-symbols-outlined text-[18px]" data-icon="logout">
               logout
             </span>
             <span className="font-body-sm">Sign Out</span>

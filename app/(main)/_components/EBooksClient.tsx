@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface BlogPost {
   id: string;
@@ -57,7 +58,7 @@ export default function EBooksClient() {
             {books.slice(0, 6).map((book) => {
               const isFree = book.category.toUpperCase().includes("FREE");
               return (
-                <div key={book.id} className="group cursor-pointer flex flex-col">
+                <Link href={`/blog/${book.slug}`} key={book.id} className="group cursor-pointer flex flex-col">
                   <div className="relative aspect-[3/4] overflow-hidden bg-surface-container rounded-md border border-outline-variant/30 group-hover:border-primary/60 transition-colors shadow-sm">
                     <Image
                       fill
@@ -76,7 +77,7 @@ export default function EBooksClient() {
                     <p className="font-label-caps text-slate-500 text-[11px] sm:text-[13px]">{book.category.toUpperCase()}</p>
                     <h3 className="font-body-sm text-[14px] sm:text-[16px] text-slate-200 leading-tight group-hover:text-primary transition-colors font-medium">{book.title}</h3>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -120,7 +121,7 @@ export default function EBooksClient() {
                 ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm"
                 : "bg-slate-800/80 text-slate-300 border border-slate-600/50 backdrop-blur-sm";
               return (
-                <div key={course.id} className="bg-surface-container border border-outline-variant/30 rounded-md overflow-hidden group hover:border-primary/50 transition-colors shadow-sm cursor-pointer flex flex-col">
+                <Link href={`/blog/${course.slug}`} key={course.id} className="bg-surface-container border border-outline-variant/30 rounded-md overflow-hidden group hover:border-primary/50 transition-colors shadow-sm cursor-pointer flex flex-col">
                   <div className="h-32 sm:h-40 relative">
                     <Image fill className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" src={course.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} alt={course.title} unoptimized />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
@@ -148,7 +149,7 @@ export default function EBooksClient() {
                       <p className="font-mono-data text-slate-400 text-[11px] sm:text-[13px]">{progress === 100 ? "CERTIFICATE ISSUED" : `${progress}/100 LESSONS`}</p>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

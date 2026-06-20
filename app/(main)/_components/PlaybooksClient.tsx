@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface BlogPost {
   id: string;
@@ -61,7 +62,7 @@ export default function PlaybooksClient() {
             </div>
           ) : playbooks.length > 0 ? (
             playbooks.map((pb) => (
-              <div key={pb.id} className="bg-surface-container border border-outline-variant rounded overflow-hidden flex flex-col md:flex-row h-auto">
+              <Link href={`/blog/${pb.slug}`} key={pb.id} className="bg-surface-container border border-outline-variant rounded overflow-hidden flex flex-col md:flex-row h-auto">
                 <div className="md:w-1/4 relative h-32 md:h-auto">
                   <Image className="absolute inset-0 w-full h-full object-cover" alt={pb.title} fill src={pb.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} />
                   <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent md:bg-gradient-to-r"></div>
@@ -108,7 +109,7 @@ export default function PlaybooksClient() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-on-surface-variant text-sm border border-outline-variant rounded bg-surface-container">
@@ -189,7 +190,7 @@ export default function PlaybooksClient() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
           {playbooks.length > 0 ? (
             playbooks.slice(0, 3).map((pb) => (
-              <div key={pb.id} className="bg-surface-container-low border border-outline-variant p-2 flex flex-col gap-2 hover:border-primary/50 transition-colors group">
+              <Link href={`/blog/${pb.slug}`} key={pb.id} className="bg-surface-container-low border border-outline-variant p-2 flex flex-col gap-2 hover:border-primary/50 transition-colors group">
                 <div className="flex justify-between items-start">
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
                     <span className="material-symbols-outlined text-primary text-[14px] sm:text-[16px]">menu_book</span>
@@ -205,7 +206,7 @@ export default function PlaybooksClient() {
                     <span key={t} className="bg-surface-container-highest px-1 py-0.5 rounded text-[13px] sm:text-[16px] font-mono-data text-outline">{t.toUpperCase()}</span>
                   ))}
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <div className="col-span-full flex items-center justify-center py-8 text-on-surface-variant text-sm">

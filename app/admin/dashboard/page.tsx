@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
     })),
     ...recentAuditLogs.map((log) => ({
       type: 'audit' as const,
-      title: `${log.action}: ${log.entity}`,
+      title: `${log.action}`,
       detail: log.user?.email || 'System',
       time: formatTime(log.createdAt),
     })),
@@ -65,7 +65,7 @@ export default async function AdminDashboardPage() {
   return (
     <>
       {/* Header Status Bar: Security Perimeter */}
-      <div className="glass-panel flex items-center justify-between px-margin-edge py-3 mb-stack-loose rounded-lg">
+      <div className="glass-panel flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-margin-edge py-3 mb-stack-loose rounded-lg gap-2 sm:gap-0">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
           <div>
@@ -73,16 +73,16 @@ export default async function AdminDashboardPage() {
             <p className="font-body-xs text-on-surface-variant uppercase tracking-widest mt-1">Status: Active &amp; Hardened</p>
           </div>
         </div>
-        <div className="flex gap-margin-edge divide-x divide-outline-variant">
-          <div className="px-4">
+        <div className="flex gap-2 sm:gap-margin-edge sm:divide-x sm:divide-outline-variant overflow-x-auto w-full sm:w-auto">
+          <div className="px-2 sm:px-4 shrink-0">
             <p className="font-label-caps text-on-surface-variant">THREAT LEVEL</p>
             <p className="font-mono-data text-primary">NULL</p>
           </div>
-          <div className="px-4">
+          <div className="px-2 sm:px-4 shrink-0">
             <p className="font-label-caps text-on-surface-variant">ENCRYPTION</p>
             <p className="font-mono-data text-on-surface">AES-256-GCM</p>
           </div>
-          <div className="px-4 flex items-center gap-2">
+          <div className="px-2 sm:px-4 flex items-center gap-2 shrink-0">
             <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
             <p className="font-body-xs font-bold text-on-surface">WAF ONLINE</p>
           </div>
@@ -104,7 +104,7 @@ export default async function AdminDashboardPage() {
                 <span className="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded">24H CYCLE</span>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-gutter mb-stack-loose">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter mb-stack-loose">
               <div className="bg-surface-container-low p-4 border border-outline-variant border-l-2 border-l-primary rounded">
                 <p className="font-label-caps text-on-surface-variant mb-1">TOTAL REVENUE (NGN)</p>
                 <h4 className="font-h1 text-h1 text-on-surface">₦{totalRevenueNGN}</h4>
@@ -151,7 +151,7 @@ export default async function AdminDashboardPage() {
           </div>
 
           {/* Nigerian Gateway Status */}
-          <div className="grid grid-cols-2 gap-gutter">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-gutter">
             <div className="glass-panel p-4 flex flex-col gap-3 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

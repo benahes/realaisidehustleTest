@@ -13,14 +13,54 @@ interface ApiToken {
 export default function SettingsClient() {
   const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [name, setName] = useState("");
+  const [language, setLanguage] = useState("en");
+  const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
     fetch("/api/settings/api-keys")
       .then((res) => { if (!res.ok) throw new Error("No API keys endpoint"); return res.json(); })
       .then((data) => { if (data.success) setTokens(data.data || []); })
+      .catch(() => {});
+
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data?.settings) {
+          const s = data.data.settings;
+          setName(s.name || "");
+          setLanguage(s.language || "en");
+          setTheme(s.theme || "dark");
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveStatus("idle");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, language, theme }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSaveStatus("success");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else {
+        setSaveStatus("error");
+      }
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-3 sm:pb-5 pt-[10px] sm:pt-[15px]">
@@ -77,17 +117,17 @@ export default function SettingsClient() {
             <div className="p-3 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
               <div className="space-y-2 sm:space-y-3">
                 <label className="font-label-caps text-xs sm:text-[13px] text-on-surface-variant block uppercase tracking-widest">System Language</label>
-                <select className="w-full bg-surface-container-high border-0 border-b border-outline text-sm sm:text-[15px] px-0 py-1.5 sm:py-2 focus:ring-0 focus:border-primary outline-none">
-                  <option>English (US) - Default</option>
-                  <option>German (DE)</option>
-                  <option>Japanese (JP)</option>
+                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-surface-container-high border-0 border-b border-outline text-sm sm:text-[15px] px-0 py-1.5 sm:py-2 focus:ring-0 focus:border-primary outline-none">
+                  <option value="en">English (US) - Default</option>
+                  <option value="de">German (DE)</option>
+                  <option value="ja">Japanese (JP)</option>
                 </select>
               </div>
               <div className="space-y-2 sm:space-y-3">
                 <label className="font-label-caps text-xs sm:text-[13px] text-on-surface-variant block uppercase tracking-widest">Theme Engine</label>
                 <div className="flex gap-2">
-                  <button className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 bg-primary text-on-primary rounded-sm font-label-caps text-xs sm:text-[13px] text-center uppercase">Dark (OLED)</button>
-                  <button className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 bg-surface-container border border-outline-variant text-on-surface-variant rounded-sm font-label-caps text-xs sm:text-[13px] text-center hover:bg-surface-variant transition-colors uppercase">System</button>
+                  <button onClick={() => setTheme("dark")} className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-sm font-label-caps text-xs sm:text-[13px] text-center uppercase transition-colors ${theme === "dark" ? "bg-primary text-on-primary" : "bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-variant"}`}>Dark (OLED)</button>
+                  <button onClick={() => setTheme("system")} className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-sm font-label-caps text-xs sm:text-[13px] text-center uppercase transition-colors ${theme === "system" ? "bg-primary text-on-primary" : "bg-surface-container border border-outline-variant text-on-surface-variant hover:bg-surface-variant"}`}>System</button>
                 </div>
               </div>
             </div>
@@ -194,9 +234,19 @@ export default function SettingsClient() {
             </div>
           </section>
 
+          {saveStatus === "success" && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm rounded-lg px-3 py-2">
+              Settings saved successfully.
+            </div>
+          )}
+          {saveStatus === "error" && (
+            <div className="bg-error-container/10 border border-error/30 text-on-error-container text-xs sm:text-sm rounded-lg px-3 py-2">
+              Failed to save settings. Please try again.
+            </div>
+          )}
           <div className="flex justify-end gap-2 sm:gap-3 pt-1 sm:pt-2">
-            <button className="px-4 sm:px-6 py-1 sm:py-1.5 border border-outline text-xs sm:text-[13px] text-on-surface-variant font-label-caps hover:text-primary transition-colors uppercase">DISCARD</button>
-            <button className="bg-primary text-on-primary px-4 sm:px-8 py-1 sm:py-1.5 rounded-full text-xs sm:text-[13px] font-label-caps shadow-[0_0_15px_rgba(224,182,255,0.4)] hover:scale-105 transition-transform uppercase">COMMIT CHANGES</button>
+            <button onClick={() => window.location.reload()} className="px-4 sm:px-6 py-1 sm:py-1.5 border border-outline text-xs sm:text-[13px] text-on-surface-variant font-label-caps hover:text-primary transition-colors uppercase">DISCARD</button>
+            <button onClick={handleSave} disabled={saving} className="bg-primary text-on-primary px-4 sm:px-8 py-1 sm:py-1.5 rounded-full text-xs sm:text-[13px] font-label-caps shadow-[0_0_15px_rgba(224,182,255,0.4)] hover:scale-105 transition-transform uppercase disabled:opacity-50">{saving ? "SAVING..." : "COMMIT CHANGES"}</button>
           </div>
         </div>
       </div>

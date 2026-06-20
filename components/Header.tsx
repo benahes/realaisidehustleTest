@@ -35,8 +35,18 @@ const menuGroups = [
 export function Header() {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
+    const [blogCount, setBlogCount] = useState(0);
     const { user, signOut } = useAuth();
     const isLoggedIn = !!user;
+
+    useEffect(() => {
+      fetch("/api/blog?limit=1")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) setBlogCount(data.data.total || 0);
+        })
+        .catch(() => {});
+    }, []);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
     const email = user?.email || '';
@@ -87,7 +97,7 @@ export function Header() {
                             <span className="text-lg sm:text-xl font-black tracking-tighter text-white dark:text-white font-mono-data">AI SIDE HUSTLE</span>
                         </Link>
                         <nav className="hidden md:flex items-center gap-2">
-                            <Link href="/" className={getLinkClasses("/")}>Blog (128)</Link>
+                            <Link href="/" className={getLinkClasses("/")}>Blog ({blogCount})</Link>
                             <Link href="/ai-radar" className={getLinkClasses("/ai-radar")}>AI Radar</Link>
                             <Link href="/tools-db" className={getLinkClasses("/tools-db")}>Tools DB</Link>
                             <Link href="/playbooks" className={getLinkClasses("/playbooks")}>Playbooks</Link>
@@ -190,7 +200,7 @@ export function Header() {
 
                 {/* Mobile Nav Row — flat square tabs, full-height, bottom-border indicator */}
                 <nav className="flex md:hidden items-stretch gap-0 px-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-webkit-overflow-scrolling:touch] w-full bg-transparent divide-x divide-purple-600/20">
-                    <Link href="/" className={getLinkClasses("/")}>Blog (128)</Link>
+                    <Link href="/" className={getLinkClasses("/")}>Blog ({blogCount})</Link>
                     <Link href="/ai-radar" className={getLinkClasses("/ai-radar")}>AI Radar</Link>
                     <Link href="/tools-db" className={getLinkClasses("/tools-db")}>Tools DB</Link>
                     <Link href="/playbooks" className={getLinkClasses("/playbooks")}>Playbooks</Link>

@@ -56,6 +56,8 @@ model User {
   avatarUrl      String?
   role           UserRole         @default(USER)
   isSubscribed   Boolean          @default(false)
+  language       String           @default("en")
+  theme          String           @default("dark")
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -64,6 +66,8 @@ model User {
   newsletterSubs NewsletterSub[]
   auditLogs      AuditLog[]
   blogPosts      BlogPost[]
+  tickets        SupportTicket[]
+  bookmarks      Bookmark[]
 }
 
 // Blog
@@ -79,10 +83,13 @@ model BlogPost {
   tags        String[]       // PostgreSQL array
   published   Boolean        @default(false)
   aiGenerated Boolean        @default(false)
+  views       Int            @default(0)
   authorId    String
   author      User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+
+  bookmarks   Bookmark[]
 }
 
 // Courses
@@ -212,4 +219,29 @@ model AuditLog {
   userAgent String
   metadata  Json?    // extra context
   createdAt DateTime @default(now())
+}
+
+// Support Tickets
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Bookmarks
+model Bookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blogPostId String
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, blogPostId])
 }

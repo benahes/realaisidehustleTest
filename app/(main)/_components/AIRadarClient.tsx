@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface BlogPost {
   id: string;
@@ -87,6 +88,7 @@ function getIconColor(category: string) {
 export default function AIRadarClient() {
   const [signals, setSignals] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState("ALL");
 
   useEffect(() => {
     fetch("/api/blog?section=AI_RADAR&limit=20")
@@ -96,6 +98,10 @@ export default function AIRadarClient() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredSignals = activeFilter === "ALL"
+    ? signals
+    : signals.filter((s) => s.category.toUpperCase().includes(activeFilter));
 
   return (
     <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5 pt-[10px] sm:pt-[15px]">
@@ -128,7 +134,11 @@ export default function AIRadarClient() {
             </h2>
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
               {["ALL", "MODELS", "FUNDING", "RESEARCH", "HUSTLE"].map((f) => (
-                <button key={f} className={`text-[11px] sm:text-[13px] font-bold tracking-widest px-1.5 py-0.5 rounded-sm uppercase transition-colors shrink-0 ${f === "ALL" ? "bg-primary text-on-primary" : "text-outline border border-outline/20 hover:text-white"}`}>
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`text-[11px] sm:text-[13px] font-bold tracking-widest px-1.5 py-0.5 rounded-sm uppercase transition-colors shrink-0 ${f === activeFilter ? "bg-primary text-on-primary" : "text-outline border border-outline/20 hover:text-white"}`}
+                >
                   {f}
                 </button>
               ))}
@@ -142,15 +152,15 @@ export default function AIRadarClient() {
                   <div key={n} className="h-24 bg-surface-container border border-outline-variant/20 rounded-lg animate-pulse" />
                 ))}
               </div>
-            ) : signals.length > 0 ? (
-              signals.map((signal) => {
+            ) : filteredSignals.length > 0 ? (
+              filteredSignals.map((signal) => {
                 const urgency = getUrgency(signal.category);
                 const impact = getImpact(signal.category);
                 const icon = getIcon(signal.category);
                 const iconStyle = getIconColor(signal.category);
                 const catColor = getCategoryColor(signal.category);
                 return (
-                  <article key={signal.id} className="group bg-surface-container border border-outline-variant/20 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-3 hover:border-primary/40 transition-all cursor-pointer">
+                  <Link href={`/blog/${signal.slug}`} key={signal.id} className="group bg-surface-container border border-outline-variant/20 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-3 hover:border-primary/40 transition-all cursor-pointer">
                     <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-md ${iconStyle.bg} border flex items-center justify-center`}>
                       <span className={`material-symbols-outlined !text-[16px] sm:!text-[18px] ${iconStyle.text}`}>{icon}</span>
                     </div>
@@ -181,7 +191,7 @@ export default function AIRadarClient() {
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 );
               })
             ) : (
@@ -239,14 +249,14 @@ export default function AIRadarClient() {
               <h2 className="font-h2 text-[15px] sm:text-[18px] text-white uppercase tracking-tight">Hustle Play of the Day</h2>
               <span className="bg-primary px-1.5 py-0.5 text-on-primary font-label-caps text-[14px] sm:text-[16px] rounded-full">AI CURATED</span>
             </div>
-            {signals[0] ? (
+            {filteredSignals[0] ? (
               <>
                 <p className="text-[12px] sm:text-[13px] text-on-surface-variant leading-relaxed mb-2 sm:mb-3">
-                  {signals[0].excerpt}
+                  {filteredSignals[0].excerpt}
                 </p>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-outline-variant/10 gap-1.5 sm:gap-0">
                   <span className="text-[12px] sm:text-[13px] text-outline uppercase tracking-wider flex gap-1 items-center">
-                    Category: <span className="bg-primary/20 px-1.5 py-0.5 rounded-sm text-[11px] sm:text-[13px] font-bold">{signals[0].category.toUpperCase()}</span>
+                    Category: <span className="bg-primary/20 px-1.5 py-0.5 rounded-sm text-[11px] sm:text-[13px] font-bold">{filteredSignals[0].category.toUpperCase()}</span>
                   </span>
                   <button className="text-[13px] sm:text-[15px] font-bold text-primary flex items-center gap-1 hover:underline uppercase tracking-widest">
                     FULL BREAKDOWN →

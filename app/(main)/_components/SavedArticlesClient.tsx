@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface BlogPost {
   id: string;
@@ -33,15 +34,30 @@ export default function SavedArticlesClient() {
   const [articles, setArticles] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchBookmarks = () => {
     fetch("/api/bookmarks")
       .then((res) => {
         if (!res.ok) throw new Error("No bookmarks API");
         return res.json();
       })
-      .then((data) => { if (data.success) setArticles(data.data || []); })
+      .then((data) => { if (data.success) setArticles(data.data?.bookmarks || []); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  const removeBookmark = async (id: string) => {
+    try {
+      const res = await fetch(`/api/bookmarks?blogPostId=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setArticles((prev) => prev.filter((a) => a.id !== id));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchBookmarks();
   }, []);
 
   return (
@@ -80,27 +96,31 @@ export default function SavedArticlesClient() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-gutter">
             {articles.map((article) => (
-              <article key={article.id} className="bg-surface-container border border-outline-variant flex flex-col group hover:border-primary/50 transition-all rounded-sm">
-                <div className="relative h-28 sm:h-36 overflow-hidden border-b border-outline-variant">
-                  <img className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src={article.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} alt={article.title} />
-                  <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-slate-950/80 px-1.5 sm:px-2 py-0.5 backdrop-blur-sm border border-white/10">
-                    <span className="font-mono-data text-xs sm:text-[13px] text-white">{article.id.slice(0,4)}</span>
+              <div key={article.id} className="bg-surface-container border border-outline-variant flex flex-col group hover:border-primary/50 transition-all rounded-sm">
+                <Link href={`/blog/${article.slug}`} className="flex flex-col flex-grow">
+                  <div className="relative h-28 sm:h-36 overflow-hidden border-b border-outline-variant">
+                    <img className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100" src={article.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"} alt={article.title} />
+                    <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-slate-950/80 px-1.5 sm:px-2 py-0.5 backdrop-blur-sm border border-white/10">
+                      <span className="font-mono-data text-xs sm:text-[13px] text-white">{article.id.slice(0,4)}</span>
+                    </div>
                   </div>
+                  <div className="p-2.5 sm:p-4 flex flex-col flex-grow">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full shrink-0"></span>
+                      <span className="font-label-caps text-xs sm:text-[13px] text-primary uppercase">{article.section} / {article.category}</span>
+                    </div>
+                    <h3 className="font-h2 text-sm sm:text-[18px] text-on-surface mb-2 sm:mb-3 leading-tight group-hover:text-primary transition-colors">{article.title}</h3>
+                    <div className="mt-auto pt-2.5 sm:pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+                      <span className="font-mono-data text-xs sm:text-[13px] text-outline uppercase">{timeAgo(article.createdAt)}</span>
+                    </div>
+                  </div>
+                </Link>
+                <div className="px-2.5 sm:px-4 pb-2.5 sm:pb-4 flex justify-end">
+                  <button onClick={(e) => { e.stopPropagation(); removeBookmark(article.id); }} className="p-1.5 sm:p-2 border border-outline-variant hover:bg-error-container hover:text-on-error-container hover:border-error transition-all">
+                    <span style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }} className="material-symbols-outlined text-base sm:text-[20px]">bookmark_remove</span>
+                  </button>
                 </div>
-                <div className="p-2.5 sm:p-4 flex flex-col flex-grow">
-                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full shrink-0"></span>
-                    <span className="font-label-caps text-xs sm:text-[13px] text-primary uppercase">{article.section} / {article.category}</span>
-                  </div>
-                  <h3 className="font-h2 text-sm sm:text-[18px] text-on-surface mb-2 sm:mb-3 leading-tight group-hover:text-primary transition-colors">{article.title}</h3>
-                  <div className="mt-auto pt-2.5 sm:pt-4 border-t border-outline-variant/30 flex items-center justify-between">
-                    <span className="font-mono-data text-xs sm:text-[13px] text-outline uppercase">{timeAgo(article.createdAt)}</span>
-                    <button className="p-1.5 sm:p-2 border border-outline-variant hover:bg-error-container hover:text-on-error-container hover:border-error transition-all">
-                      <span style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }} className="material-symbols-outlined text-base sm:text-[20px]">bookmark_remove</span>
-                    </button>
-                  </div>
-                </div>
-              </article>
+              </div>
             ))}
           </div>
           <div className="mt-4 sm:mt-8 flex flex-col sm:flex-row items-center justify-between border-t border-outline-variant pt-3 sm:pt-5 gap-2 sm:gap-4">

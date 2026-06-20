@@ -21,19 +21,53 @@ export default function SupportClient() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [docs, setDocs] = useState<DocItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [ticketTitle, setTicketTitle] = useState("");
+  const [ticketDesc, setTicketDesc] = useState("");
+  const [ticketPriority, setTicketPriority] = useState("MEDIUM");
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  const fetchTickets = () => {
     fetch("/api/support/tickets")
       .then((res) => { if (!res.ok) throw new Error("No tickets API"); return res.json(); })
-      .then((data) => { if (data.success) setTickets(data.data || []); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((data) => { if (data.success) setTickets(data.data?.tickets || []); })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchTickets();
+    setLoading(false);
 
     fetch("/api/support/docs")
       .then((res) => { if (!res.ok) throw new Error("No docs API"); return res.json(); })
       .then((data) => { if (data.success) setDocs(data.data || []); })
       .catch(() => {});
   }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketTitle.trim() || !ticketDesc.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/support/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: ticketTitle, description: ticketDesc, priority: ticketPriority }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setShowModal(false);
+        setTicketTitle("");
+        setTicketDesc("");
+        setTicketPriority("MEDIUM");
+        fetchTickets();
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-3 sm:pb-5 pt-[10px] sm:pt-[15px]">
@@ -55,7 +89,7 @@ export default function SupportClient() {
           </div>
           <h2 className="font-h2 text-lg sm:text-[24px] text-on-surface mb-1 sm:mb-2 uppercase">Technical Support</h2>
           <p className="text-xs sm:text-[14px] text-on-surface-variant mb-4 sm:mb-8 leading-relaxed">Direct access to systems engineers for complex debugging.</p>
-          <button className="flex items-center gap-2 text-primary font-label-caps text-xs sm:text-[13px] uppercase group-hover:gap-4 transition-all">Open Ticket <span className="material-symbols-outlined text-base sm:text-[18px]">arrow_forward</span></button>
+          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 text-primary font-label-caps text-xs sm:text-[13px] uppercase group-hover:gap-4 transition-all">Open Ticket <span className="material-symbols-outlined text-base sm:text-[18px]">arrow_forward</span></button>
         </div>
         <div className="md:col-span-1 glass-panel p-3 sm:p-5 hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/20 rounded-lg">
           <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-lg sm:text-[24px] block mb-2 sm:mb-4">api</span>
@@ -119,6 +153,42 @@ export default function SupportClient() {
             )}
           </div>
         </section>
+
+        {/* Ticket Creation Modal */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-surface-container border border-outline-variant/30 rounded-xl w-full max-w-md p-4 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-h2 text-base sm:text-lg text-white uppercase tracking-wider">New Ticket</h3>
+                <button onClick={() => setShowModal(false)} className="text-on-surface-variant hover:text-white transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="font-label-caps text-xs text-on-surface-variant block uppercase tracking-widest mb-1">Title</label>
+                  <input value={ticketTitle} onChange={(e) => setTicketTitle(e.target.value)} required className="w-full bg-surface-container-high border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary" placeholder="Brief summary of your issue" />
+                </div>
+                <div>
+                  <label className="font-label-caps text-xs text-on-surface-variant block uppercase tracking-widest mb-1">Priority</label>
+                  <select value={ticketPriority} onChange={(e) => setTicketPriority(e.target.value)} className="w-full bg-surface-container-high border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary">
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-label-caps text-xs text-on-surface-variant block uppercase tracking-widest mb-1">Description</label>
+                  <textarea value={ticketDesc} onChange={(e) => setTicketDesc(e.target.value)} required rows={4} className="w-full bg-surface-container-high border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary resize-none" placeholder="Describe your issue in detail..." />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-outline text-xs text-on-surface-variant font-label-caps uppercase rounded-lg hover:text-primary transition-colors">Cancel</button>
+                  <button type="submit" disabled={submitting} className="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-label-caps uppercase hover:brightness-110 transition-all disabled:opacity-50">{submitting ? "Submitting..." : "Submit Ticket"}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <section className="lg:col-span-1">
           <div className="relative overflow-hidden glass-panel rounded-lg p-4 sm:p-8 h-full flex flex-col justify-between border border-primary/30 group cursor-pointer">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface BlogPost {
   id: string;
@@ -72,7 +73,7 @@ export default function ToolsDBClient() {
                 const colors = getCategoryColor(tool.category);
                 const icon = getCategoryIcon(tool.category);
                 return (
-                  <div key={tool.id} className="tool-card group bg-surface-container/30 border border-outline-variant/20 p-2 sm:p-3 flex flex-col gap-2 sm:gap-3 rounded-lg">
+                  <Link href={`/blog/${tool.slug}`} key={tool.id} className="tool-card group bg-surface-container/30 border border-outline-variant/20 p-2 sm:p-3 flex flex-col gap-2 sm:gap-3 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div className={`w-7 h-7 sm:w-8 sm:h-8 ${colors.bg} rounded flex items-center justify-center border ${colors.border}`}>
                         <span className={`material-symbols-outlined ${colors.text} !text-[16px] sm:!text-[18px]`}>{icon}</span>
@@ -100,7 +101,7 @@ export default function ToolsDBClient() {
                         <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">north_east</span>
                       </button>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

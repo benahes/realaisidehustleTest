@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { MoveRight, Mail, Twitter, Github, Linkedin } from "lucide-react";
+import { Mail, Twitter, Github, Linkedin } from "lucide-react";
+import NewsletterForm from "./NewsletterForm";
 
 export function Footer() {
     return (
@@ -23,25 +24,7 @@ export function Footer() {
                         </p>
                     </div>
 
-                    {/* Newsletter - Unified minimalist design for both Mobile and Desktop */}
-                    <div className="flex flex-col gap-1.5 w-full mt-1 md:mt-0">
-                        <span className="text-white text-xs font-semibold tracking-wider uppercase hidden md:block">Subscribe to our newsletter</span>
-                        <form className="flex w-full group relative shadow-sm">
-                            <input
-                                type="email"
-                                placeholder="Join our newsletter..."
-                                className="bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-lg px-3 md:px-4 py-2 w-full focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-600"
-                                required
-                            />
-                            <button
-                                type="submit"
-                                aria-label="Subscribe"
-                                className="absolute right-1 top-1 bottom-1 bg-purple-600 hover:bg-purple-500 md:bg-purple-600/20 md:hover:bg-purple-600 text-white md:text-purple-400 hover:text-white px-3 rounded-md transition-all flex items-center justify-center shadow-md md:shadow-none"
-                            >
-                                <MoveRight className="w-4 h-4 md:group-hover:translate-x-0.5 transition-transform" />
-                            </button>
-                        </form>
-                    </div>
+                    <NewsletterForm />
                 </div>
 
                 {/* Navigation Links */}

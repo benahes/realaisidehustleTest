@@ -59,9 +59,9 @@ export default function RegisterPage() {
                             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                                 <span className="material-symbols-outlined text-on-primary text-[18px]">psychology</span>
                             </div>
-                            <h1 className="font-h1 text-h1 tracking-tight text-primary">IntellectOS</h1>
+                            <h1 className="font-h1 text-h1 tracking-tight text-primary">AI Side Hustle</h1>
                         </div>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-stack-tight opacity-70">Synthetic Intelligence Index v2.4.0-stable</p>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-stack-tight opacity-70">Engineering your financial freedom with AI</p>
                     </div>
                 </div>
                 {/* Grid Overlay */}
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                                 <span className="material-symbols-outlined text-on-primary text-[18px]">psychology</span>
                             </div>
-                            <h1 className="font-h1 text-h1 tracking-tight text-primary">IntellectOS</h1>
+                            <h1 className="font-h1 text-h1 tracking-tight text-primary">AI Side Hustle</h1>
                         </div>
                     </div>
 
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                     {/* Legal/System Info */}
                     <div className="mt-stack-loose pt-stack-loose border-t border-outline-variant/30 flex justify-between items-center opacity-40">
                         <span className="font-mono-data text-mono-data">ENCRYPTION: AES-256-GCM</span>
-                        <span className="font-mono-data text-mono-data">© 2024 INTELLECTOS</span>
+                        <span className="font-mono-data text-mono-data">© 2024 AI SIDE HUSTLE</span>
                     </div>
                 </div>
             </section>

@@ -9,15 +9,20 @@ interface BlogPostPageProps {
 }
 
 async function getBlogPost(slug: string) {
-  const blog = await prisma.blogPost.findUnique({
-    where: { slug },
-    include: {
-      author: {
-        select: { id: true, name: true, email: true, avatarUrl: true },
+  try {
+    const blog = await prisma.blogPost.findUnique({
+      where: { slug },
+      include: {
+        author: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
+        },
       },
-    },
-  });
-  return blog;
+    });
+    return blog;
+  } catch (err: any) {
+    console.error("[BLOG POST GET]", err);
+    throw new Error(err?.message || String(err));
+  }
 }
 
 async function getRelatedPosts(currentId: string, category: string, section: string) {
@@ -93,7 +98,19 @@ function shareUrl(platform: "twitter" | "linkedin" | "whatsapp", url: string, ti
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const blog = await getBlogPost(slug);
+  let blog;
+  try {
+    blog = await getBlogPost(slug);
+  } catch (err: any) {
+    return (
+      <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-5 pt-[84px] sm:pt-[90px]">
+        <div className="bg-error/10 border border-error/30 rounded-xl p-6 text-error">
+          <h1 className="font-h1 text-xl mb-2">Failed to load post</h1>
+          <p className="text-sm opacity-80">{err?.message || String(err)}</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!blog || !blog.published) {
     notFound();

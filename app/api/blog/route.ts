@@ -54,6 +54,13 @@ export async function GET(req: NextRequest) {
           aiGenerated: true,
           createdAt: true,
           updatedAt: true,
+          author: {
+            select: {
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
+          },
         },
       }),
       prisma.blogPost.count({ where }),

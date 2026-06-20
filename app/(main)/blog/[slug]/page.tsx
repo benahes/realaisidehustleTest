@@ -12,7 +12,21 @@ async function getBlogPost(slug: string) {
   try {
     const blog = await prisma.blogPost.findUnique({
       where: { slug },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        coverImage: true,
+        section: true,
+        category: true,
+        tags: true,
+        published: true,
+        aiGenerated: true,
+        authorId: true,
+        createdAt: true,
+        updatedAt: true,
         author: {
           select: { id: true, name: true, email: true, avatarUrl: true },
         },

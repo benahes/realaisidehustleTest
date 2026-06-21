@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import CopyLinkButton from "./CopyLinkButton";
+import ReadingProgress from "./ReadingProgress";
+import TableOfContents from "./TableOfContents";
+import ArticleBody from "./ArticleBody";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -40,13 +42,13 @@ async function getBlogPost(slug: string) {
   }
 }
 
-async function getRelatedPosts(currentId: string, category: string, section: string) {
+async function getRelatedPosts(currentId: string, category: string) {
   try {
     return await prisma.blogPost.findMany({
       where: {
         published: true,
         id: { not: currentId },
-        OR: [{ category }, { section }],
+        category,
       },
       orderBy: { createdAt: "desc" },
       take: 3,
@@ -88,7 +90,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 }
 
-function timeAgo(dateStr: string) {
+function timeAgo(dateStr: string | Date) {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -105,19 +107,6 @@ function timeAgo(dateStr: string) {
 function readTime(content: string) {
   const words = content?.split(/\s+/).filter(Boolean).length || 0;
   return Math.max(1, Math.ceil(words / 200));
-}
-
-function shareUrl(platform: "twitter" | "linkedin" | "whatsapp", url: string, title: string) {
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
-  switch (platform) {
-    case "twitter":
-      return `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
-    case "linkedin":
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
-    case "whatsapp":
-      return `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
-  }
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
@@ -140,7 +129,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const related = await getRelatedPosts(blog.id, blog.category, blog.section);
+  const related = await getRelatedPosts(blog.id, blog.category);
   const rTime = readTime(blog.content || "");
   const postUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/blog/${slug}`;
 
@@ -163,181 +152,147 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   };
 
   return (
-    <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-5 pt-[84px] sm:pt-[90px]">
+    <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-12 pt-6 sm:pt-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs sm:text-sm text-on-surface-variant mb-3 sm:mb-4">
-        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <Link href={`/${blog.section.toLowerCase().replace("_", "-")}`} className="hover:text-primary transition-colors uppercase">
-          {blog.section.replace("_", " ")}
+      <ReadingProgress />
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 mb-6 text-body-xs font-mono-data text-outline">
+        <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
+        <span className="material-symbols-outlined text-[12px]">chevron_right</span>
+        <Link href={`/blog?category=${encodeURIComponent(blog.category)}`} className="hover:text-primary transition-colors">
+          {blog.category}
         </Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="text-on-surface truncate max-w-[200px]">{blog.title}</span>
+        <span className="material-symbols-outlined text-[12px]">chevron_right</span>
+        <span className="text-on-surface truncate max-w-[180px]">{blog.title}</span>
       </nav>
 
-      {/* Article Header */}
-      <article className="space-y-4 sm:space-y-6">
-        {/* Title & Meta */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="bg-primary-container/20 text-primary border border-primary/30 px-2 py-0.5 rounded-sm font-label-caps text-[11px] sm:text-[13px] uppercase tracking-widest">
-              {blog.category}
-            </span>
-            <span className="text-on-surface-variant text-xs sm:text-sm flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">schedule</span>
-              {rTime} min read
-            </span>
-            <span className="text-on-surface-variant text-xs sm:text-sm flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-              {new Date(blog.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-          </div>
-          <h1 className="font-h1 text-xl sm:text-3xl lg:text-4xl text-white leading-tight tracking-tight">
-            {blog.title}
-          </h1>
-          <p className="text-on-surface-variant text-sm sm:text-base leading-relaxed max-w-3xl">
-            {blog.excerpt}
-          </p>
-        </div>
+      <div className="flex flex-col lg:flex-row gap-gutter">
+          {/* Article View */}
+          <section className="flex-1 max-w-3xl mx-auto lg:mx-0">
+            {/* Article Header */}
+            <header className="mb-8">
+              <h1 className="font-h1 text-[32px] sm:text-[40px] leading-tight text-on-surface mb-6 tracking-tight">
+                {blog.title}
+              </h1>
+              <div className="flex items-center justify-between border-y border-outline-variant/30 py-4 flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border border-outline-variant bg-primary-container/30 flex items-center justify-center text-primary overflow-hidden">
+                    {blog.author?.avatarUrl ? (
+                      <Image src={blog.author.avatarUrl} alt={blog.author.name || ""} width={40} height={40} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-sm">{blog.author?.name?.charAt(0).toUpperCase() || "A"}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-h2 text-body-sm text-on-surface">{blog.author?.name || blog.author?.email || "Anonymous"}</p>
+                    <p className="text-body-xs text-on-surface-variant">{timeAgo(blog.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-stack-mid">
+                  <span className="text-body-xs font-mono-data text-outline flex items-center gap-1 mr-4">
+                    <span className="material-symbols-outlined text-[14px]">schedule</span> {rTime} min read
+                  </span>
+                  <button className="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined">share</button>
+                  <button className="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined">bookmark</button>
+                </div>
+              </div>
+            </header>
 
-        {/* Author */}
-        <div className="flex items-center gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-outline-variant/30">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary-container/30 flex items-center justify-center text-primary font-bold text-sm sm:text-base overflow-hidden">
-            {blog.author?.avatarUrl ? (
-              <Image src={blog.author.avatarUrl} alt={blog.author.name || ""} width={44} height={44} className="w-full h-full object-cover" />
-            ) : (
-              blog.author?.name?.charAt(0).toUpperCase() || "A"
+            {/* Cover Image */}
+            {blog.coverImage && (
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-outline-variant/30 mb-8 article-shadow">
+                <Image src={blog.coverImage} alt={blog.title} fill className="object-cover" priority unoptimized />
+              </div>
             )}
-          </div>
-          <div>
-            <p className="text-white text-sm sm:text-base font-medium">{blog.author?.name || blog.author?.email || "Anonymous"}</p>
-            <p className="text-on-surface-variant text-xs sm:text-sm">{timeAgo(blog.createdAt)}</p>
-          </div>
-        </div>
 
-        {/* Cover Image */}
-        {blog.coverImage && (
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-outline-variant/30">
-            <Image
-              src={blog.coverImage}
-              alt={blog.title}
-              fill
-              className="object-cover"
-              priority
-              unoptimized
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-          <div className="lg:col-span-8 space-y-6">
-            <div
-              className="prose prose-invert prose-sm sm:prose-base max-w-none prose-headings:text-white prose-headings:font-h2 prose-p:text-on-surface-variant prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-primary prose-pre:bg-surface-container prose-pre:border prose-pre:border-outline-variant/30 prose-img:rounded-lg"
-              dangerouslySetInnerHTML={{ __html: blog.content || "" }}
-            />
+            {/* Article Body */}
+            <ArticleBody content={blog.content || ""} />
 
             {/* Tags */}
             {blog.tags && blog.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-4 border-t border-outline-variant/30">
-                <span className="text-on-surface-variant text-xs sm:text-sm font-medium">Tags:</span>
+              <div className="flex flex-wrap gap-2 pt-6 mt-8 border-t border-outline-variant/30">
+                <span className="text-body-xs text-outline font-mono-data uppercase">Tags:</span>
                 {blog.tags.map((tag) => (
-                  <span key={tag} className="bg-surface-container-high text-on-surface-variant border border-outline-variant/20 rounded-sm px-2 py-0.5 text-xs sm:text-sm font-medium">
+                  <span key={tag} className="bg-surface-container-high text-on-surface-variant border border-outline-variant/20 rounded-sm px-2 py-0.5 text-body-xs font-medium">
                     {tag}
                   </span>
                 ))}
               </div>
             )}
 
-            {/* Share */}
-            <div className="flex items-center gap-3 pt-4 border-t border-outline-variant/30">
-              <span className="text-on-surface-variant text-xs sm:text-sm font-medium">Share:</span>
-              <a
-                href={shareUrl("twitter", postUrl, blog.title)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary-container/20 transition-colors"
-                aria-label="Share on Twitter"
-              >
-                <svg className="w-4 h-4 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a
-                href={shareUrl("linkedin", postUrl, blog.title)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary-container/20 transition-colors"
-                aria-label="Share on LinkedIn"
-              >
-                <svg className="w-4 h-4 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              </a>
-              <a
-                href={shareUrl("whatsapp", postUrl, blog.title)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary-container/20 transition-colors"
-                aria-label="Share on WhatsApp"
-              >
-                <svg className="w-4 h-4 text-on-surface-variant" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.669.15-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.13 1.59 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              </a>
-              <CopyLinkButton url={postUrl} />
+            {/* Bottom Post Navigation */}
+            <div className="mt-16 flex items-stretch border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest">
+              <div className="flex-1 p-6 border-r border-outline-variant opacity-50">
+                <p className="text-[10px] font-label-caps text-outline uppercase mb-2">Previous Entry</p>
+                <p className="font-h2 text-body-sm text-on-surface">—</p>
+              </div>
+              <div className="flex-1 p-6 opacity-50 text-right">
+                <p className="text-[10px] font-label-caps text-outline uppercase mb-2">Next Entry</p>
+                <p className="font-h2 text-body-sm text-on-surface">—</p>
+              </div>
             </div>
-          </div>
 
-          {/* Sidebar */}
-          <aside className="lg:col-span-4 space-y-gutter">
-            {/* Related Posts */}
-            {related.length > 0 && (
-              <div className="glass-panel rounded-xl p-3 sm:p-5 border border-outline-variant/20">
-                <h3 className="font-h2 text-sm sm:text-base text-white uppercase tracking-wider mb-3 sm:mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[16px] sm:text-[18px]">auto_stories</span>
-                  Related
-                </h3>
-                <div className="space-y-3 sm:space-y-4">
-                  {related.map((post) => (
-                    <Link key={post.id} href={`/blog/${post.slug}`} className="group flex gap-3">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container">
-                        {post.coverImage ? (
-                          <Image src={post.coverImage} alt={post.title} width={80} height={80} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" unoptimized />
-                        ) : (
-                          <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
-                            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">article</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-white text-xs sm:text-sm font-medium leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                          {post.title}
-                        </h4>
-                        <p className="text-on-surface-variant text-[11px] sm:text-xs mt-1">{timeAgo(post.createdAt)}</p>
-                      </div>
-                    </Link>
-                  ))}
+            {/* Comments Section */}
+            <section className="mt-16 pb-8">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="font-h1 text-h1 text-on-surface">Discussion</h2>
+                <button className="bg-primary text-on-primary px-4 py-1.5 font-label-caps rounded-full text-[12px] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]">edit</span> Post Response
+                </button>
+              </div>
+              <p className="text-body-sm text-on-surface-variant">Comments are coming soon.</p>
+            </section>
+          </section>
+
+          {/* Right Sticky Sidebar */}
+          <aside className="hidden lg:block w-72 shrink-0">
+            <div className="sticky top-20 flex flex-col gap-8">
+              <TableOfContents content={blog.content || ""} />
+
+              {/* Related Intelligence */}
+              {related.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-[10px] font-label-caps text-outline uppercase tracking-widest px-2">Related Intelligence</h3>
+                  <div className="space-y-4">
+                    {related.map((post) => (
+                      <Link key={post.id} href={`/blog/${post.slug}`} className="group cursor-pointer block">
+                        <div className="h-32 w-full rounded-lg overflow-hidden border border-outline-variant mb-2 bg-surface-container">
+                          {post.coverImage ? (
+                            <Image src={post.coverImage} alt={post.title} width={300} height={128} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" unoptimized />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="material-symbols-outlined text-on-surface-variant text-[32px]">article</span>
+                            </div>
+                          )}
+                        </div>
+                        <h4 className="font-h2 text-body-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">{post.title}</h4>
+                        <p className="text-[10px] font-mono-data text-outline mt-1 uppercase">{post.category} • {timeAgo(post.createdAt)}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Newsletter CTA */}
+              <div className="bg-primary-container p-6 rounded-lg text-on-primary-container relative overflow-hidden">
+                <div className="relative z-10">
+                  <p className="font-h2 text-h2 mb-2">Weekly Digest</p>
+                  <p className="text-body-xs opacity-90 mb-4">Get the latest AI tools, playbooks, and radar signals.</p>
+                  <input className="w-full bg-on-primary-container/20 border-none rounded px-3 py-2 text-body-xs placeholder:text-on-primary-container/50 focus:ring-1 focus:ring-white mb-2" placeholder="you@example.com" type="email" readOnly />
+                  <Link href="/" className="block w-full bg-white text-primary-container font-label-caps py-2 rounded text-[10px] uppercase text-center hover:brightness-110 transition-all">
+                    Subscribe
+                  </Link>
+                </div>
+                <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
+                  <span className="material-symbols-outlined text-[120px]">bolt</span>
                 </div>
               </div>
-            )}
-
-            {/* Newsletter CTA */}
-            <div className="bg-primary-container/5 border border-primary/20 rounded-xl p-3 sm:p-5">
-              <h3 className="font-h2 text-sm sm:text-base text-white uppercase tracking-wider mb-2 sm:mb-3">
-                Stay Updated
-              </h3>
-              <p className="text-on-surface-variant text-xs sm:text-sm mb-3 sm:mb-4">
-                Get the latest AI tools, playbooks, and radar signals delivered to your inbox.
-              </p>
-              <Link
-                href="/"
-                className="w-full bg-primary text-on-primary py-2 rounded-lg font-label-caps text-xs sm:text-sm uppercase text-center block hover:brightness-110 transition-all"
-              >
-                Subscribe
-              </Link>
             </div>
           </aside>
-        </div>
-      </article>
+      </div>
     </main>
   );
 }

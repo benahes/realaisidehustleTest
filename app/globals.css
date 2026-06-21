@@ -161,6 +161,26 @@
     background-color: #2e2831;
     border-color: #9d4edd;
   }
+
+  .article-shadow {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  }
+
+  .code-block {
+    background: #110c15;
+    border: 1px solid #4d4353;
+    padding: 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    margin: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
 }
 
 .material-symbols-outlined {

@@ -104,9 +104,9 @@ export default function AIRadarClient() {
     : signals.filter((s) => s.category.toUpperCase().includes(activeFilter));
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5 pt-[10px] sm:pt-[15px]">
+    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5 pt-0">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 pb-1 border-b border-outline-variant/20 gap-2 sm:gap-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between py-0 border-b border-outline-variant/20 gap-2 sm:gap-0">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -247,7 +247,7 @@ export default function AIRadarClient() {
             <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
               <span className="text-primary text-[16px] sm:text-[18px]">⚡</span>
               <h2 className="font-h2 text-[15px] sm:text-[18px] text-white uppercase tracking-tight">Hustle Play of the Day</h2>
-              <span className="bg-primary px-1.5 py-0.5 text-on-primary font-label-caps text-[14px] sm:text-[16px] rounded-full">AI CURATED</span>
+              <span className="bg-primary px-1.5 py-0.5 text-on-primary font-label-caps text-[9px] sm:text-[10px] rounded-full whitespace-nowrap">AI CURATED</span>
             </div>
             {filteredSignals[0] ? (
               <>

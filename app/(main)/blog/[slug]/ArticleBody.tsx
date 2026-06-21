@@ -68,7 +68,7 @@ export default function ArticleBody({ content }: { content: string }) {
   return (
     <div
       ref={containerRef}
-      className="article-content font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant leading-relaxed space-y-3 sm:space-y-6"
+      className="article-content font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant leading-relaxed"
       dangerouslySetInnerHTML={{ __html: content || "" }}
     />
   );

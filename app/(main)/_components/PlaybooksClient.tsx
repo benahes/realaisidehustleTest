@@ -43,11 +43,11 @@ export default function PlaybooksClient() {
   }, []);
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col pb-5 pt-[10px] sm:pt-[15px]">
+    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col pb-5 pt-0">
       <div className="grid grid-cols-12 gap-gutter">
         {/* Main Content Area */}
         <section className="col-span-12 lg:col-span-8 space-y-gutter">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-1.5 sm:gap-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-0 gap-1.5 sm:gap-0">
             <h1 className="font-h1 text-[18px] sm:text-[24px] text-on-surface uppercase tracking-tighter">Structured Workflows</h1>
             <span className="font-mono-data text-primary text-[13px] sm:text-[16px] px-1.5 py-0.5 border border-primary/20 rounded bg-primary/5">
               {playbooks.length} ACTIVE PLAYBOOKS

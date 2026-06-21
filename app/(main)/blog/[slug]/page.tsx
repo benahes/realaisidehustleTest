@@ -132,6 +132,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const related = await getRelatedPosts(blog.id, blog.category);
   const htmlContent = markdownToHtml(blog.content || "");
+  const hasToc = /<h[23]\b/i.test(htmlContent);
+  const hasSidebar = hasToc || related.length > 0;
   const rTime = readTime(blog.content || "");
   const postUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/blog/${slug}`;
 
@@ -154,7 +156,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   };
 
   return (
-    <main className="max-w-container-max mx-auto px-2 sm:px-3 pb-6 pt-2 sm:pt-3">
+    <main className="max-w-container-max mx-auto px-2 sm:px-3 pb-6 pt-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -173,7 +175,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <div className="flex flex-col lg:flex-row gap-2 sm:gap-gutter">
         {/* Article View */}
-        <section className="flex-1 max-w-none lg:max-w-3xl mx-auto lg:mx-0 w-full">
+        <section className="flex-1 w-full mx-auto lg:mx-0">
           {/* Article Header */}
           <header className="mb-4 sm:mb-6">
             <h1 className="font-h1 text-[22px] sm:text-[32px] lg:text-[40px] leading-tight text-on-surface mb-3 sm:mb-6 tracking-tight">
@@ -250,18 +252,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </section>
 
         {/* Right Sticky Sidebar */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-20 flex flex-col gap-4 sm:gap-8">
-            <TableOfContents content={htmlContent} />
+        {hasSidebar && (
+          <aside className="hidden lg:block w-64 shrink-0">
+            <div className="sticky top-20 flex flex-col gap-4 sm:gap-8">
+              {hasToc && <TableOfContents content={htmlContent} />}
 
-            {/* Related Intelligence */}
-            {related.length > 0 && (
-              <div className="flex flex-col gap-2 sm:gap-4">
-                <h3 className="text-[10px] font-label-caps text-outline uppercase tracking-widest px-2">Related Intelligence</h3>
-                <div className="space-y-2 sm:space-y-4">
-                  {related.map((post) => (
-                    <Link key={post.id} href={`/blog/${post.slug}`} className="group cursor-pointer block">
-                      <div className="h-24 sm:h-32 w-full rounded-lg overflow-hidden border border-outline-variant mb-1 sm:mb-2 bg-surface-container">
+              {/* Related Intelligence */}
+              {related.length > 0 && (
+                <div className="flex flex-col gap-2 sm:gap-4">
+                  <h3 className="text-[10px] font-label-caps text-outline uppercase tracking-widest px-2">Related Intelligence</h3>
+                  <div className="space-y-2 sm:space-y-4">
+                    {related.map((post) => (
+                      <Link key={post.id} href={`/blog/${post.slug}`} className="group cursor-pointer block">
+                        <div className="h-24 sm:h-32 w-full rounded-lg overflow-hidden border border-outline-variant mb-1 sm:mb-2 bg-surface-container">
                           {post.coverImage ? (
                             <Image src={post.coverImage} alt={post.title} width={300} height={128} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" unoptimized />
                           ) : (
@@ -277,9 +280,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   </div>
                 </div>
               )}
-
             </div>
           </aside>
+        )}
       </div>
     </main>
   );

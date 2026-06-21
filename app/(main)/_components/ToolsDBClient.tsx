@@ -58,17 +58,17 @@ export default function ToolsDBClient() {
   }, []);
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5 pt-[10px] sm:pt-[15px]">
+    <main className="max-w-container-max mx-auto px-margin-edge flex flex-col gap-gutter pb-5 pt-0">
       <section className="w-full">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-2 sm:mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-0">
             {[1, 2, 3, 4, 5].map((n) => (
               <div key={n} className="h-48 bg-surface-container/30 border border-outline-variant/20 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : tools.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-2 sm:mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-0">
               {tools.map((tool) => {
                 const colors = getCategoryColor(tool.category);
                 const icon = getCategoryIcon(tool.category);

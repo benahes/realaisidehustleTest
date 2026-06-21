@@ -15,13 +15,13 @@ export default function ArticleBody({ content }: { content: string }) {
       if (parent?.classList.contains("code-block")) return;
 
       const wrapper = document.createElement("div");
-      wrapper.className = "code-block group relative my-4";
+      wrapper.className = "code-block group relative my-3 sm:my-4";
       parent?.insertBefore(wrapper, pre);
       wrapper.appendChild(pre);
 
       const copyBtn = document.createElement("button");
       copyBtn.className =
-        "absolute right-4 top-4 text-body-xs font-label-caps text-primary border border-primary px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity";
+        "absolute right-2 sm:right-4 top-2 sm:top-4 text-[9px] sm:text-body-xs font-label-caps text-primary border border-primary px-1.5 sm:px-2 py-0.5 sm:py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity";
       copyBtn.textContent = "COPY";
       copyBtn.onclick = () => {
         const text = pre.textContent || "";
@@ -32,33 +32,43 @@ export default function ArticleBody({ content }: { content: string }) {
       wrapper.appendChild(copyBtn);
     });
 
+    // Style images
+    container.querySelectorAll("img").forEach((img) => {
+      img.className = "w-full h-auto rounded-lg sm:rounded-xl border border-outline-variant/30 my-3 sm:my-6 article-shadow";
+    });
+
     // Style lists and blockquotes
     container.querySelectorAll("blockquote").forEach((q) => {
-      q.className = "bg-surface-container-low border-l-4 border-primary p-6 italic rounded-r-lg my-6";
+      q.className = "bg-surface-container-low border-l-4 border-primary p-3 sm:p-6 italic rounded-r-lg my-3 sm:my-6 text-on-surface";
     });
     container.querySelectorAll("ul").forEach((ul) => {
       if (!ul.classList.contains("list-none")) {
-        ul.className = "list-disc pl-6 space-y-2 border-l-2 border-outline-variant ml-2 py-2 my-4";
+        ul.className = "list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 border-l-2 border-outline-variant ml-1 sm:ml-2 py-1 sm:py-2 my-3 sm:my-4 text-on-surface-variant";
       }
     });
     container.querySelectorAll("ol").forEach((ol) => {
-      ol.className = "list-decimal pl-6 space-y-2 ml-2 py-2 my-4";
+      ol.className = "list-decimal pl-4 sm:pl-6 space-y-1 sm:space-y-2 ml-1 sm:ml-2 py-1 sm:py-2 my-3 sm:my-4 text-on-surface-variant";
     });
     container.querySelectorAll("h2").forEach((h2) => {
-      h2.className = "font-h2 text-h1 text-primary pt-4 flex items-center gap-2";
+      h2.className = "font-h2 text-[16px] sm:text-h1 text-primary pt-2 sm:pt-4 flex items-center gap-2";
     });
     container.querySelectorAll("h3").forEach((h3) => {
-      h3.className = "font-h2 text-h2 text-on-surface pt-4";
+      h3.className = "font-h2 text-[14px] sm:text-h2 text-on-surface pt-2 sm:pt-4";
+    });
+    container.querySelectorAll("a").forEach((a) => {
+      a.className = "text-primary hover:underline";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
     });
     container.querySelectorAll("p").forEach((p) => {
-      if (!p.className) p.className = "my-4";
+      if (!p.className) p.className = "my-3 sm:my-4";
     });
   }, [content]);
 
   return (
     <div
       ref={containerRef}
-      className="article-content font-body-sm text-on-surface-variant leading-relaxed space-y-6"
+      className="article-content font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant leading-relaxed space-y-3 sm:space-y-6"
       dangerouslySetInnerHTML={{ __html: content || "" }}
     />
   );

@@ -169,10 +169,16 @@
   .code-block {
     background: #110c15;
     border: 1px solid #4d4353;
-    padding: 12px;
+    padding: 8px;
     border-radius: 4px;
     font-family: monospace;
     overflow-x: auto;
+  }
+
+  @media (min-width: 640px) {
+    .code-block {
+      padding: 12px;
+    }
   }
 
   .code-block pre {

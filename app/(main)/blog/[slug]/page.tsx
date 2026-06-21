@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { markdownToHtml } from "@/lib/markdown";
 import ReadingProgress from "./ReadingProgress";
 import TableOfContents from "./TableOfContents";
 import ArticleBody from "./ArticleBody";
@@ -130,6 +131,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const related = await getRelatedPosts(blog.id, blog.category);
+  const htmlContent = markdownToHtml(blog.content || "");
   const rTime = readTime(blog.content || "");
   const postUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/blog/${slug}`;
 
@@ -152,14 +154,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   };
 
   return (
-    <main className="max-w-container-max mx-auto px-3 sm:px-margin-edge pb-12 pt-6 sm:pt-8">
+    <main className="max-w-container-max mx-auto px-2 sm:px-3 pb-6 pt-2 sm:pt-3">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ReadingProgress />
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 mb-6 text-body-xs font-mono-data text-outline">
+      <nav className="flex items-center gap-2 mb-2 sm:mb-4 text-[10px] sm:text-body-xs font-mono-data text-outline">
         <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
         <span className="material-symbols-outlined text-[12px]">chevron_right</span>
         <Link href={`/blog?category=${encodeURIComponent(blog.category)}`} className="hover:text-primary transition-colors">
@@ -169,97 +171,97 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <span className="text-on-surface truncate max-w-[180px]">{blog.title}</span>
       </nav>
 
-      <div className="flex flex-col lg:flex-row gap-gutter">
-          {/* Article View */}
-          <section className="flex-1 max-w-3xl mx-auto lg:mx-0">
-            {/* Article Header */}
-            <header className="mb-8">
-              <h1 className="font-h1 text-[32px] sm:text-[40px] leading-tight text-on-surface mb-6 tracking-tight">
+      <div className="flex flex-col lg:flex-row gap-2 sm:gap-gutter">
+        {/* Article View */}
+        <section className="flex-1 max-w-none lg:max-w-3xl mx-auto lg:mx-0 w-full">
+          {/* Article Header */}
+          <header className="mb-4 sm:mb-6">
+            <h1 className="font-h1 text-[22px] sm:text-[32px] lg:text-[40px] leading-tight text-on-surface mb-3 sm:mb-6 tracking-tight">
                 {blog.title}
               </h1>
-              <div className="flex items-center justify-between border-y border-outline-variant/30 py-4 flex-wrap gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full border border-outline-variant bg-primary-container/30 flex items-center justify-center text-primary overflow-hidden">
+            <div className="flex items-center justify-between border-y border-outline-variant/30 py-2 sm:py-4 flex-wrap gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-outline-variant bg-primary-container/30 flex items-center justify-center text-primary overflow-hidden">
                     {blog.author?.avatarUrl ? (
                       <Image src={blog.author.avatarUrl} alt={blog.author.name || ""} width={40} height={40} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-bold text-sm">{blog.author?.name?.charAt(0).toUpperCase() || "A"}</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-h2 text-body-sm text-on-surface">{blog.author?.name || blog.author?.email || "Anonymous"}</p>
-                    <p className="text-body-xs text-on-surface-variant">{timeAgo(blog.createdAt)}</p>
-                  </div>
+                  ) : (
+                    <span className="font-bold text-[10px] sm:text-sm">{blog.author?.name?.charAt(0).toUpperCase() || "A"}</span>
+                  )}
                 </div>
-                <div className="flex items-center gap-stack-mid">
-                  <span className="text-body-xs font-mono-data text-outline flex items-center gap-1 mr-4">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span> {rTime} min read
-                  </span>
-                  <button className="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined">share</button>
-                  <button className="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined">bookmark</button>
+                <div>
+                  <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">{blog.author?.name || blog.author?.email || "Anonymous"}</p>
+                  <p className="text-[9px] sm:text-body-xs text-on-surface-variant">{timeAgo(blog.createdAt)}</p>
                 </div>
               </div>
-            </header>
+              <div className="flex items-center gap-1 sm:gap-stack-mid">
+                <span className="text-[9px] sm:text-body-xs font-mono-data text-outline flex items-center gap-1 mr-2 sm:mr-4">
+                  <span className="material-symbols-outlined text-[12px] sm:text-[14px]">schedule</span> {rTime} min read
+                </span>
+                <button className="p-1 sm:p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined text-[14px] sm:text-[16px]">share</button>
+                <button className="p-1 sm:p-1.5 rounded-lg border border-outline-variant hover:bg-surface-variant text-on-surface-variant transition-colors material-symbols-outlined text-[14px] sm:text-[16px]">bookmark</button>
+              </div>
+            </div>
+          </header>
 
             {/* Cover Image */}
             {blog.coverImage && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-outline-variant/30 mb-8 article-shadow">
+              <div className="relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden border border-outline-variant/30 mb-4 sm:mb-8 article-shadow">
                 <Image src={blog.coverImage} alt={blog.title} fill className="object-cover" priority unoptimized />
               </div>
             )}
 
             {/* Article Body */}
-            <ArticleBody content={blog.content || ""} />
+            <ArticleBody content={htmlContent} />
 
             {/* Tags */}
             {blog.tags && blog.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-6 mt-8 border-t border-outline-variant/30">
-                <span className="text-body-xs text-outline font-mono-data uppercase">Tags:</span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-3 sm:pt-6 mt-4 sm:mt-8 border-t border-outline-variant/30">
+                <span className="text-[10px] sm:text-body-xs text-outline font-mono-data uppercase">Tags:</span>
                 {blog.tags.map((tag) => (
-                  <span key={tag} className="bg-surface-container-high text-on-surface-variant border border-outline-variant/20 rounded-sm px-2 py-0.5 text-body-xs font-medium">
-                    {tag}
-                  </span>
+                <span key={tag} className="bg-surface-container-high text-on-surface-variant border border-outline-variant/20 rounded-sm px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-body-xs font-medium">
+                  {tag}
+                </span>
                 ))}
               </div>
             )}
 
             {/* Bottom Post Navigation */}
-            <div className="mt-16 flex items-stretch border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest">
-              <div className="flex-1 p-6 border-r border-outline-variant opacity-50">
-                <p className="text-[10px] font-label-caps text-outline uppercase mb-2">Previous Entry</p>
-                <p className="font-h2 text-body-sm text-on-surface">—</p>
+            <div className="mt-8 sm:mt-16 flex items-stretch border border-outline-variant rounded-lg sm:rounded-xl overflow-hidden bg-surface-container-lowest">
+              <div className="flex-1 p-3 sm:p-6 border-r border-outline-variant opacity-50">
+                <p className="text-[9px] sm:text-[10px] font-label-caps text-outline uppercase mb-1 sm:mb-2">Previous Entry</p>
+                <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">—</p>
               </div>
-              <div className="flex-1 p-6 opacity-50 text-right">
-                <p className="text-[10px] font-label-caps text-outline uppercase mb-2">Next Entry</p>
-                <p className="font-h2 text-body-sm text-on-surface">—</p>
+              <div className="flex-1 p-3 sm:p-6 opacity-50 text-right">
+                <p className="text-[9px] sm:text-[10px] font-label-caps text-outline uppercase mb-1 sm:mb-2">Next Entry</p>
+                <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">—</p>
               </div>
             </div>
 
             {/* Comments Section */}
-            <section className="mt-16 pb-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="font-h1 text-h1 text-on-surface">Discussion</h2>
-                <button className="bg-primary text-on-primary px-4 py-1.5 font-label-caps rounded-full text-[12px] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px]">edit</span> Post Response
+            <section className="mt-8 sm:mt-16 pb-4 sm:pb-8">
+              <div className="flex items-center justify-between mb-3 sm:mb-8">
+                <h2 className="font-h1 text-[16px] sm:text-h1 text-on-surface">Discussion</h2>
+                <button className="bg-primary text-on-primary px-2 sm:px-4 py-1 sm:py-1.5 font-label-caps rounded-full text-[10px] sm:text-[12px] flex items-center gap-1 sm:gap-2">
+                  <span className="material-symbols-outlined text-[14px] sm:text-[16px]">edit</span> Post Response
                 </button>
               </div>
-              <p className="text-body-sm text-on-surface-variant">Comments are coming soon.</p>
+              <p className="text-[10px] sm:text-body-sm text-on-surface-variant">Comments are coming soon.</p>
             </section>
           </section>
 
-          {/* Right Sticky Sidebar */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-20 flex flex-col gap-8">
-              <TableOfContents content={blog.content || ""} />
+        {/* Right Sticky Sidebar */}
+        <aside className="hidden lg:block w-64 shrink-0">
+          <div className="sticky top-20 flex flex-col gap-4 sm:gap-8">
+            <TableOfContents content={htmlContent} />
 
-              {/* Related Intelligence */}
-              {related.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-[10px] font-label-caps text-outline uppercase tracking-widest px-2">Related Intelligence</h3>
-                  <div className="space-y-4">
-                    {related.map((post) => (
-                      <Link key={post.id} href={`/blog/${post.slug}`} className="group cursor-pointer block">
-                        <div className="h-32 w-full rounded-lg overflow-hidden border border-outline-variant mb-2 bg-surface-container">
+            {/* Related Intelligence */}
+            {related.length > 0 && (
+              <div className="flex flex-col gap-2 sm:gap-4">
+                <h3 className="text-[10px] font-label-caps text-outline uppercase tracking-widest px-2">Related Intelligence</h3>
+                <div className="space-y-2 sm:space-y-4">
+                  {related.map((post) => (
+                    <Link key={post.id} href={`/blog/${post.slug}`} className="group cursor-pointer block">
+                      <div className="h-24 sm:h-32 w-full rounded-lg overflow-hidden border border-outline-variant mb-1 sm:mb-2 bg-surface-container">
                           {post.coverImage ? (
                             <Image src={post.coverImage} alt={post.title} width={300} height={128} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" unoptimized />
                           ) : (
@@ -276,20 +278,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 </div>
               )}
 
-              {/* Newsletter CTA */}
-              <div className="bg-primary-container p-6 rounded-lg text-on-primary-container relative overflow-hidden">
-                <div className="relative z-10">
-                  <p className="font-h2 text-h2 mb-2">Weekly Digest</p>
-                  <p className="text-body-xs opacity-90 mb-4">Get the latest AI tools, playbooks, and radar signals.</p>
-                  <input className="w-full bg-on-primary-container/20 border-none rounded px-3 py-2 text-body-xs placeholder:text-on-primary-container/50 focus:ring-1 focus:ring-white mb-2" placeholder="you@example.com" type="email" readOnly />
-                  <Link href="/" className="block w-full bg-white text-primary-container font-label-caps py-2 rounded text-[10px] uppercase text-center hover:brightness-110 transition-all">
-                    Subscribe
-                  </Link>
-                </div>
-                <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
-                  <span className="material-symbols-outlined text-[120px]">bolt</span>
-                </div>
-              </div>
             </div>
           </aside>
       </div>

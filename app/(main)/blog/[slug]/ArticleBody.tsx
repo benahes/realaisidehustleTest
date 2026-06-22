@@ -33,8 +33,55 @@ export default function ArticleBody({ content }: { content: string }) {
     });
 
     // Style images
+    container.querySelectorAll("p").forEach((p) => {
+      const children = Array.from(p.childNodes);
+      const isOnlyImages = children.every(
+        (node) =>
+          (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toLowerCase() === "img") ||
+          (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === "")
+      );
+
+      if (isOnlyImages) {
+        const images = Array.from(p.querySelectorAll("img"));
+        if (images.length === 0) return;
+
+        p.className = `my-6 sm:my-8 w-full ${
+          images.length > 1
+            ? "grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 place-items-center"
+            : "flex flex-col items-center justify-center"
+        }`;
+
+        images.forEach((img) => {
+          const figure = document.createElement("figure");
+          figure.className = "flex flex-col items-center justify-center w-full group";
+
+          const newImg = img.cloneNode(true) as HTMLImageElement;
+          
+          if (images.length > 1) {
+            newImg.className = "w-full max-h-[50vh] sm:max-h-[40vh] object-cover rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow bg-surface-container-lowest/50";
+          } else {
+            newImg.className = "max-w-full max-h-[70vh] w-auto h-auto rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow object-contain bg-surface-container-lowest/50";
+          }
+          
+          figure.appendChild(newImg);
+
+          if (newImg.alt) {
+            const caption = document.createElement("figcaption");
+            caption.className = "mt-2 sm:mt-3 text-[10px] sm:text-[12px] text-outline font-mono-data text-center px-4 max-w-[80%]";
+            caption.textContent = newImg.alt;
+            figure.appendChild(caption);
+          }
+
+          img.parentNode?.replaceChild(figure, img);
+        });
+      }
+    });
+
+    // Fallback for standalone images not in a purely image <p>
     container.querySelectorAll("img").forEach((img) => {
-      img.className = "w-full h-auto rounded-lg sm:rounded-xl border border-outline-variant/30 my-3 sm:my-6 article-shadow";
+      if (img.parentElement?.tagName.toLowerCase() !== "figure") {
+        img.className = "max-w-full max-h-[70vh] w-auto h-auto mx-auto rounded-lg sm:rounded-xl border border-outline-variant/30 my-4 sm:my-8 article-shadow object-contain bg-surface-container-lowest/50 block";
+      }
     });
 
     // Style lists and blockquotes

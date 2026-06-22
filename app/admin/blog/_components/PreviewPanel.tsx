@@ -20,7 +20,7 @@ function simpleMarkdownToHtml(md: string): string {
     .replace(/^> (.*$)/gim, '<blockquote class="bg-surface-container-low p-4 rounded-lg border-l-2 border-primary italic text-on-surface my-6">$1</blockquote>')
     .replace(/^- (.*$)/gim, '<li class="ml-6 list-disc text-on-surface-variant py-1">$1</li>')
     .replace(/^\d+\. (.*$)/gim, '<li class="ml-6 list-decimal text-on-surface-variant py-1">$1</li>')
-    .replace(/!\[(.*?)\]\((.*?)\)/gim, "<img alt='$1' src='$2' class='w-full h-auto max-h-[35vh] sm:max-h-[70vh] rounded-xl border border-outline-variant/30 my-8 article-shadow object-contain bg-surface-container-lowest/50 block mx-auto' />")
+    .replace(/!\[(.*?)\]\((.*?)\)/gim, "<img alt='$1' src='$2' class='w-full h-full object-contain rounded-xl border border-outline-variant/30 my-8 article-shadow bg-surface-container-lowest/50 block' />")
     .replace(/```([\s\S]*?)```/gim, '<pre class="bg-surface-container-low p-4 rounded-lg border border-outline-variant overflow-x-auto my-6 font-mono-data text-sm text-primary"><code>$1</code></pre>')
     .replace(/`([^`]+)`/gim, '<code class="bg-surface-container-low px-1.5 py-0.5 rounded text-primary font-mono-data text-sm">$1</code>')
     .replace(/\n/gim, '<br/>')

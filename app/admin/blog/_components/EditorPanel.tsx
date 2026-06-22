@@ -28,9 +28,11 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
   const [coverImage, setCoverImage] = useState('')
   const [monetization, setMonetization] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
 
   const contentRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   // AI generator state
   const [aiPrompt, setAiPrompt] = useState('')
@@ -136,6 +138,35 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
       toast(err.message || 'Save failed', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingCover(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload/image/', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!data.success) {
+        toast(data.error || 'Upload failed', 'error')
+        return
+      }
+
+      setCoverImage(data.data.url)
+      toast('Cover image uploaded successfully', 'success')
+      e.target.value = ''
+    } catch (err: any) {
+      toast(err.message || 'Upload failed', 'error')
+    } finally {
+      setUploadingCover(false)
     }
   }
 
@@ -288,17 +319,17 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-label-caps uppercase text-outline">Cover Image URL</label>
+                <label className="text-[10px] font-label-caps uppercase text-outline">Tags (Comma Separated)</label>
                 <input
                   className="w-full bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors"
-                  placeholder="https://... (Optional)"
+                  placeholder="AI, Tech, Updates"
                   type="text"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 sm:col-span-2">
                 <label className="text-[10px] font-label-caps uppercase text-outline">Section & Category</label>
                 <div className="flex gap-2">
                   <select
@@ -326,15 +357,65 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
                   </select>
                 </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-label-caps uppercase text-outline">Tags (Comma Separated)</label>
+            </div>
+
+            {/* Media Uploads */}
+            <div className="flex flex-col sm:flex-row gap-4 p-3 bg-surface-container/50 border border-outline-variant/30 rounded-lg justify-between items-center">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 <input
-                  className="w-full bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors"
-                  placeholder="AI, Tech, Updates"
-                  type="text"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
+                  type="file"
+                  accept="image/*"
+                  ref={coverInputRef}
+                  onChange={handleCoverUpload}
+                  className="hidden"
                 />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-container border border-outline-variant/50 hover:border-primary hover:text-primary rounded shadow-sm transition-all disabled:opacity-50 w-full sm:w-auto justify-center"
+                  title="Upload Cover Image"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {uploadingCover ? 'sync' : 'wallpaper'}
+                  </span>
+                  {uploadingCover ? 'Uploading...' : 'Upload Cover Image'}
+                </button>
+                {coverImage && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-primary text-xs font-medium bg-primary/10 px-2 py-1 rounded">
+                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                      <span className="hidden sm:inline">Cover Set</span>
+                    </div>
+                    <button type="button" onClick={() => setCoverImage('')} className="text-[18px] text-error hover:text-red-400 material-symbols-outlined" title="Remove Cover Image">
+                      cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden sm:block w-px h-8 bg-outline-variant/30"></div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-container border border-outline-variant/50 hover:border-primary hover:text-primary rounded shadow-sm transition-all disabled:opacity-50 w-full sm:w-auto justify-center"
+                  title="Insert image into content"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {uploadingImage ? 'sync' : 'add_photo_alternate'}
+                  </span>
+                  {uploadingImage ? 'Uploading...' : 'Insert Content Image'}
+                </button>
               </div>
             </div>
 
@@ -352,27 +433,9 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col border border-outline-variant/50 rounded-lg overflow-hidden bg-surface-container/30">
-              <div className="flex items-center gap-2 border-b border-outline-variant/50 bg-surface-container-high/50 p-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingImage}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-on-surface bg-surface-container border border-outline-variant/50 hover:border-primary hover:text-primary rounded shadow-sm transition-all disabled:opacity-50"
-                  title="Upload image to content"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    {uploadingImage ? 'sync' : 'add_photo_alternate'}
-                  </span>
-                  {uploadingImage ? 'Uploading...' : 'Insert Image'}
-                </button>
-                <span className="text-[10px] text-outline ml-auto pr-2 font-mono-data uppercase">Markdown Supported</span>
+              <div className="flex items-center justify-between border-b border-outline-variant/50 bg-surface-container-high/50 p-2 px-3">
+                <span className="text-[11px] font-label-caps uppercase text-on-surface">Post Body</span>
+                <span className="text-[10px] text-outline font-mono-data uppercase">Markdown Supported</span>
               </div>
               
               <textarea

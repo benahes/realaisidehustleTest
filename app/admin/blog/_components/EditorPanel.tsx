@@ -253,107 +253,136 @@ export default function EditorPanel({ activeSection, editingPost, onSaved, onCan
 
       <div className="flex-1 p-stack-loose relative flex flex-col">
         {tab === 'manual' ? (
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-5">
             {editingPost && (
-              <div className="flex items-center gap-2 text-sm text-primary">
+              <div className="flex items-center gap-2 text-sm bg-primary/10 text-primary px-3 py-2 rounded-lg border border-primary/20">
                 <span className="material-symbols-outlined text-[18px]">edit</span>
-                <span>Editing: {editingPost.title}</span>
-                <button onClick={onCancelEdit} className="ml-auto text-on-surface-variant hover:text-error text-xs underline">
-                  Cancel
+                <span className="font-medium">Editing mode active: <span className="text-white">{editingPost.title}</span></span>
+                <button onClick={onCancelEdit} className="ml-auto text-primary hover:text-white text-xs underline font-medium">
+                  Exit Editing
                 </button>
               </div>
             )}
-            <input
-              className="bg-transparent border-none text-h2 font-h2 text-on-surface w-full focus:ring-0 placeholder:opacity-30 outline-none"
-              placeholder="Draft Title: Entropic Systems in Silicon..."
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <div className="flex gap-2">
+
+            {/* Basic Info */}
+            <div className="space-y-3">
               <input
-                className="flex-1 bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
-                placeholder="slug-url-path"
+                className="w-full bg-transparent border-none text-2xl sm:text-3xl font-bold text-on-surface focus:ring-0 placeholder:text-outline-variant outline-none px-0"
+                placeholder="Enter Post Title..."
                 type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-              />
-              <select
-                className="flex-1 bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none cursor-pointer"
-                value={section}
-                onChange={(e) => {
-                  const newSection = e.target.value as SectionKey
-                  setSection(newSection)
-                  const sec = getContentHubSection(newSection)
-                  if (sec) setCategory(sec.categories[0])
-                }}
-              >
-                {contentHubSections.map((sec) => (
-                  <option key={sec.key} value={sec.key}>{sec.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <select
-                className="flex-1 bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none cursor-pointer"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {getContentHubSection(section)?.categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <input
-                className="flex-1 bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
-                placeholder="Tags: comma, separated, values"
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-            <input
-              className="w-full bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none"
-              placeholder="Cover Image URL (optional)"
-              type="text"
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-            />
-            <textarea
-              className="w-full bg-surface-container-high border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none resize-none"
-              rows={2}
-              placeholder="Short excerpt for SEO and previews..."
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-            />
-            <div className="flex items-center gap-2 border-b border-outline-variant pb-1">
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImage}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-label-caps text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded transition-all disabled:opacity-50"
-                title="Upload image to content"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  {uploadingImage ? 'sync' : 'image'}
-                </span>
-                {uploadingImage ? 'Uploading...' : 'Insert Image'}
-              </button>
-              <span className="text-[10px] text-on-surface-variant opacity-50">JPG, PNG, WebP up to 5MB</span>
+
+            {/* Post Settings */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-surface-container/50 border border-outline-variant/30 rounded-lg">
+              <div className="space-y-1">
+                <label className="text-[10px] font-label-caps uppercase text-outline">URL Slug</label>
+                <input
+                  className="w-full bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors"
+                  placeholder="e.g. entropic-systems"
+                  type="text"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-label-caps uppercase text-outline">Cover Image URL</label>
+                <input
+                  className="w-full bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors"
+                  placeholder="https://... (Optional)"
+                  type="text"
+                  value={coverImage}
+                  onChange={(e) => setCoverImage(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-label-caps uppercase text-outline">Section & Category</label>
+                <div className="flex gap-2">
+                  <select
+                    className="flex-1 bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors cursor-pointer"
+                    value={section}
+                    onChange={(e) => {
+                      const newSection = e.target.value as SectionKey
+                      setSection(newSection)
+                      const sec = getContentHubSection(newSection)
+                      if (sec) setCategory(sec.categories[0])
+                    }}
+                  >
+                    {contentHubSections.map((sec) => (
+                      <option key={sec.key} value={sec.key}>{sec.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="flex-1 bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors cursor-pointer"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {getContentHubSection(section)?.categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-label-caps uppercase text-outline">Tags (Comma Separated)</label>
+                <input
+                  className="w-full bg-surface-container border border-outline-variant/50 rounded px-2.5 py-1.5 text-sm text-on-surface focus:border-primary focus:outline-none transition-colors"
+                  placeholder="AI, Tech, Updates"
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                />
+              </div>
             </div>
-            <textarea
-              ref={contentRef}
-              className="flex-1 bg-transparent border-none text-body-sm font-mono-data text-on-surface-variant focus:ring-0 resize-none custom-scrollbar outline-none"
-              placeholder="# Start writing markdown..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+
+            {/* Excerpt */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-label-caps uppercase text-outline pl-1">Excerpt / Summary</label>
+              <textarea
+                className="w-full bg-surface-container/50 border border-outline-variant/50 rounded-lg px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none resize-none transition-colors"
+                rows={2}
+                placeholder="A short, catchy summary for the blog feed..."
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+              />
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col border border-outline-variant/50 rounded-lg overflow-hidden bg-surface-container/30">
+              <div className="flex items-center gap-2 border-b border-outline-variant/50 bg-surface-container-high/50 p-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-on-surface bg-surface-container border border-outline-variant/50 hover:border-primary hover:text-primary rounded shadow-sm transition-all disabled:opacity-50"
+                  title="Upload image to content"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    {uploadingImage ? 'sync' : 'add_photo_alternate'}
+                  </span>
+                  {uploadingImage ? 'Uploading...' : 'Insert Image'}
+                </button>
+                <span className="text-[10px] text-outline ml-auto pr-2 font-mono-data uppercase">Markdown Supported</span>
+              </div>
+              
+              <textarea
+                ref={contentRef}
+                className="w-full flex-1 min-h-[350px] bg-transparent border-none text-[14px] leading-relaxed font-mono-data text-on-surface-variant focus:ring-0 resize-y custom-scrollbar outline-none p-4"
+                placeholder="Write your amazing content here... (Supports Markdown)"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col justify-center items-center gap-6 px-12">

@@ -58,9 +58,9 @@ export default function ArticleBody({ content }: { content: string }) {
           const newImg = img.cloneNode(true) as HTMLImageElement;
           
           if (images.length > 1) {
-            newImg.className = "w-full max-h-[50vh] sm:max-h-[40vh] object-cover rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow bg-surface-container-lowest/50";
+            newImg.className = "w-full h-[25vh] sm:h-[40vh] object-cover rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow bg-surface-container-lowest/50";
           } else {
-            newImg.className = "max-w-full max-h-[70vh] w-auto h-auto rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow object-contain bg-surface-container-lowest/50";
+            newImg.className = "w-full h-[35vh] sm:h-[70vh] object-cover rounded-lg sm:rounded-xl border border-outline-variant/30 article-shadow bg-surface-container-lowest/50";
           }
           
           figure.appendChild(newImg);
@@ -80,7 +80,7 @@ export default function ArticleBody({ content }: { content: string }) {
     // Fallback for standalone images not in a purely image <p>
     container.querySelectorAll("img").forEach((img) => {
       if (img.parentElement?.tagName.toLowerCase() !== "figure") {
-        img.className = "max-w-full max-h-[70vh] w-auto h-auto mx-auto rounded-lg sm:rounded-xl border border-outline-variant/30 my-4 sm:my-8 article-shadow object-contain bg-surface-container-lowest/50 block";
+        img.className = "w-full h-[35vh] sm:h-[70vh] rounded-lg sm:rounded-xl border border-outline-variant/30 my-4 sm:my-8 article-shadow object-cover bg-surface-container-lowest/50 block";
       }
     });
 

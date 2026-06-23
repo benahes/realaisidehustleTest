@@ -9,7 +9,6 @@ const mainNavItems = [
   { label: "Overview", href: "/admin/dashboard", icon: "dashboard" },
   { label: "Content Hub", href: "/admin/blog", icon: "inventory_2" },
   { label: "Marketplace", href: "/admin/marketplace", icon: "shopping_cart" },
-  { label: "Media & Storage", href: "/admin/upload", icon: "perm_media" },
   { label: "Monetization", href: "/admin/monetization", icon: "payments" },
   { label: "Security", href: "/admin/security", icon: "security" },
 ];

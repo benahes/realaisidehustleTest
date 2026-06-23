@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 type AssetType = 'COURSE' | 'TOOL'
 
@@ -8,6 +8,8 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
   const [type, setType] = useState<AssetType>('COURSE')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<Record<string, any>>({
     title: '',
@@ -27,6 +29,35 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
 
   const handleChange = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingThumbnail(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload/image/', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!data.success) {
+        setError(data.error || 'Upload failed')
+        return
+      }
+
+      handleChange('thumbnail', data.data.url)
+      e.target.value = ''
+    } catch (err: any) {
+      setError(err.message || 'Upload failed')
+    } finally {
+      setUploadingThumbnail(false)
+    }
   }
 
   const generateSlug = (text: string) => {
@@ -208,14 +239,54 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
 
           <div>
             <label className="font-label-caps text-[10px] text-on-surface-variant block uppercase tracking-wider mb-1">
-              {type === 'COURSE' ? 'Thumbnail URL' : 'Icon'}
+              {type === 'COURSE' ? 'Thumbnail' : 'Icon'}
             </label>
-            <input
-              value={type === 'COURSE' ? form.thumbnail : form.icon}
-              onChange={(e) => handleChange(type === 'COURSE' ? 'thumbnail' : 'icon', e.target.value)}
-              className="w-full bg-surface-variant/30 border border-outline-variant/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
-              placeholder={type === 'COURSE' ? 'Image URL' : 'Material icon name'}
-            />
+            {type === 'COURSE' ? (
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={thumbnailInputRef}
+                  onChange={handleThumbnailUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  disabled={uploadingThumbnail}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-variant/30 border border-outline-variant/30 hover:border-primary hover:text-primary rounded transition-all disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {uploadingThumbnail ? 'sync' : 'wallpaper'}
+                  </span>
+                  {uploadingThumbnail ? 'Uploading...' : 'Upload Thumbnail'}
+                </button>
+                {form.thumbnail && (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={form.thumbnail}
+                      alt="Thumbnail preview"
+                      className="w-10 h-10 object-cover rounded border border-outline-variant/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleChange('thumbnail', '')}
+                      className="text-error hover:text-red-400 material-symbols-outlined text-[18px]"
+                      title="Remove thumbnail"
+                    >
+                      cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <input
+                value={form.icon}
+                onChange={(e) => handleChange('icon', e.target.value)}
+                className="w-full bg-surface-variant/30 border border-outline-variant/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                placeholder="Material icon name"
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-2">

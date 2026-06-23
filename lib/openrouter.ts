@@ -1,16 +1,5 @@
 import axios from "axios";
 
-const openrouterKey = process.env.OPENROUTER_API_KEY;
-
-const openrouterClient = axios.create({
-  baseURL: "https://openrouter.ai/api/v1",
-  headers: {
-    Authorization: `Bearer ${openrouterKey}`,
-    "Content-Type": "application/json",
-  },
-  timeout: 60000,
-});
-
 export async function generateBlogWithOpenRouter(params: {
   topic: string;
   tone?: string;
@@ -18,9 +7,13 @@ export async function generateBlogWithOpenRouter(params: {
 }) {
   const { topic, tone = "professional", length = "medium" } = params;
 
+  const openrouterKey = process.env.OPENROUTER_API_KEY?.trim();
+
   if (!openrouterKey) {
     throw new Error("OPENROUTER_API_KEY not configured");
   }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://real-ai-side-hustle.vercel.app";
 
   const lengthMap: Record<string, string> = {
     short: "500-800 words",
@@ -32,15 +25,27 @@ export async function generateBlogWithOpenRouter(params: {
 
   const userPrompt = `Write a ${lengthMap[length]} blog post about: ${topic}`;
 
-  const res = await openrouterClient.post("/chat/completions", {
-    model: "deepseek/deepseek-chat-v3-0324:free",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.7,
-  });
+  const res = await axios.post(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      model: process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324:free",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${openrouterKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": appUrl,
+        "X-Title": "Real AI Side Hustle",
+      },
+      timeout: 60000,
+    },
+  );
 
   const raw = res.data.choices?.[0]?.message?.content;
   if (!raw) throw new Error("Empty response from OpenRouter");

@@ -12,7 +12,7 @@ import { logAudit } from "@/lib/audit";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { generateBlogWithGemini } from "@/lib/gemini";
 import { generateBlogPost, generateOpenAI } from "@/lib/grok";
-import { generateBlogWithOpenRouter, isOpenRouterAuthError, isOpenRouterQuotaError } from "@/lib/openrouter";
+import { generateBlogWithOpenRouter } from "@/lib/openrouter";
 import { ZodError } from "zod";
 
 // POST /api/ai/generate-blog — generate blog via AI (admin)
@@ -47,21 +47,8 @@ export async function POST(req: NextRequest) {
         });
       } catch (openrouterErr: any) {
         lastError = openrouterErr?.response?.data?.error?.message || openrouterErr?.message || "OpenRouter failed";
-        console.error("[AI GENERATE] OpenRouter failed:", lastError);
-
-        if (isOpenRouterAuthError(openrouterErr)) {
-          return errorResponse(
-            "OpenRouter API key is invalid or missing. Please check your OPENROUTER_API_KEY environment variable in Railway.",
-            401,
-          );
-        }
-
-        if (isOpenRouterQuotaError(openrouterErr)) {
-          return errorResponse(
-            "OpenRouter free quota exceeded. Please wait a moment or add credits to your OpenRouter account.",
-            402,
-          );
-        }
+        console.error("[AI GENERATE] OpenRouter failed:", lastError, "status:", openrouterErr?.response?.status);
+        usedFallback = true;
       }
     }
 
@@ -155,7 +142,7 @@ export async function POST(req: NextRequest) {
       usedFallback,
       message: usedFallback
         ? "Blog generated via fallback AI. Review before publishing."
-        : "Blog generated with Gemini. Review before publishing.",
+        : "Blog generated with OpenRouter. Review before publishing.",
     });
   } catch (err: any) {
     if (err instanceof ZodError) return handleZodError(err);

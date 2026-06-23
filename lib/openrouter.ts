@@ -28,7 +28,7 @@ export async function generateBlogWithOpenRouter(params: {
   const res = await axios.post(
     "https://openrouter.ai/api/v1/chat/completions",
     {
-      model: process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324:free",
+      model: process.env.OPENROUTER_MODEL || "openai/gpt-oss-20b:free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

@@ -12,6 +12,7 @@ import { logAudit } from "@/lib/audit";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { generateBlogWithGemini } from "@/lib/gemini";
 import { generateBlogPost, generateOpenAI } from "@/lib/grok";
+import { generateBlogWithOpenRouter, isOpenRouterAuthError, isOpenRouterQuotaError } from "@/lib/openrouter";
 import { ZodError } from "zod";
 
 // POST /api/ai/generate-blog — generate blog via AI (admin)
@@ -36,14 +37,43 @@ export async function POST(req: NextRequest) {
     let usedFallback = false;
     let lastError = "";
 
-    // 1. Try Gemini first (free tier)
-    if (process.env.GEMINI_API_KEY) {
+    // 1. Try OpenRouter first (uses provided API key / free tier)
+    if (process.env.OPENROUTER_API_KEY) {
+      try {
+        generated = await generateBlogWithOpenRouter({
+          topic: body.topic,
+          tone: body.tone,
+          length: body.length,
+        });
+      } catch (openrouterErr: any) {
+        lastError = openrouterErr?.response?.data?.error?.message || openrouterErr?.message || "OpenRouter failed";
+        console.error("[AI GENERATE] OpenRouter failed:", lastError);
+
+        if (isOpenRouterAuthError(openrouterErr)) {
+          return errorResponse(
+            "OpenRouter API key is invalid or missing. Please check your OPENROUTER_API_KEY environment variable in Railway.",
+            401,
+          );
+        }
+
+        if (isOpenRouterQuotaError(openrouterErr)) {
+          return errorResponse(
+            "OpenRouter free quota exceeded. Please wait a moment or add credits to your OpenRouter account.",
+            402,
+          );
+        }
+      }
+    }
+
+    // 2. Fallback to Gemini (free tier)
+    if (!generated && process.env.GEMINI_API_KEY) {
       try {
         generated = await generateBlogWithGemini({
           topic: body.topic,
           tone: body.tone,
           length: body.length,
         });
+        usedFallback = true;
       } catch (geminiErr: any) {
         lastError = geminiErr?.response?.data?.error?.message || geminiErr?.message || "Gemini failed";
         console.error("[AI GENERATE] Gemini failed:", lastError);
@@ -53,7 +83,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Fallback to Grok
+    // 3. Fallback to Grok
     if (!generated) {
       try {
         generated = await generateBlogPost({

@@ -4,43 +4,28 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-interface BlogPost {
+interface Course {
   id: string;
   title: string;
   slug: string;
-  excerpt: string;
-  coverImage: string | null;
-  section: string;
-  category: string;
-  tags: string[];
+  description: string;
+  price: number;
+  currency: string;
+  thumbnail: string | null;
+  isPublished: boolean;
   createdAt: string;
-  author: {
-    name: string | null;
-    email: string;
-    avatarUrl: string | null;
-  } | null;
-}
-
-function getLevelBadge(category: string) {
-  const cat = category.toUpperCase();
-  if (cat.includes("BEGINNER")) return { label: "L1 • BEGINNER", color: "border-emerald-500/30 text-emerald-400" };
-  if (cat.includes("INTERMEDIATE")) return { label: "L2 • INTERMEDIATE", color: "border-amber-500/30 text-amber-400" };
-  if (cat.includes("ADVANCED")) return { label: "L3 • ADVANCED", color: "border-orange-500/30 text-orange-400" };
-  if (cat.includes("EXPERT")) return { label: "L4 • EXPERT", color: "border-red-500/30 text-red-400" };
-  if (cat.includes("RESEARCH")) return { label: "L5 • RESEARCH", color: "border-purple-500/30 text-purple-400" };
-  return { label: "L1 • BEGINNER", color: "border-emerald-500/30 text-emerald-400" };
 }
 
 export default function CoursesClient() {
-  const [courses, setCourses] = useState<BlogPost[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"ALL" | "IN_PROGRESS" | "COMPLETED">("ALL");
 
   useEffect(() => {
-    fetch("/api/blog?section=COURSES&limit=20")
+    fetch("/api/courses?limit=20")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setCourses(data.data.blogs);
+        if (data.success) setCourses(data.data.courses);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -73,20 +58,22 @@ export default function CoursesClient() {
         ) : displayed.length > 0 ? (
           <>
             {displayed.map((course) => {
-              const badge = getLevelBadge(course.category);
+              const priceDisplay = course.currency === "NGN"
+                ? `₦${(course.price / 100).toLocaleString()}`
+                : `$${(course.price / 100).toFixed(2)}`;
               return (
                 <div key={course.id} className="glass-panel group overflow-hidden flex flex-col rounded-xl border border-outline-variant/30">
-                  <Link href={`/blog/${course.slug}`} className="flex flex-col flex-grow">
+                  <Link href={`/courses/${course.slug}`} className="flex flex-col flex-grow">
                     <div className="h-24 sm:h-40 w-full relative overflow-hidden">
                       <Image
                         className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                         alt={course.title}
                         fill
-                        src={course.coverImage || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"}
+                        src={course.thumbnail || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzM0MTU1Ii8+PC9zdmc+"}
                       />
                       <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
-                        <div className={`bg-slate-950/80 px-1.5 py-0.5 sm:px-2.5 rounded-sm border ${badge.color} font-mono-data text-[10px] sm:text-[13px]`}>
-                          {badge.label}
+                        <div className="bg-slate-950/80 px-1.5 py-0.5 sm:px-2.5 rounded-sm border border-primary/30 text-primary font-mono-data text-[10px] sm:text-[13px]">
+                          {course.price === 0 ? "FREE" : priceDisplay}
                         </div>
                       </div>
                     </div>
@@ -95,20 +82,11 @@ export default function CoursesClient() {
                         <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1 shrink-0"></div>
                         <h3 className="font-h2 text-sm sm:text-[18px] font-bold leading-tight text-white">{course.title}</h3>
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-2 sm:mb-5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[11px] sm:text-[13px] text-on-surface-variant uppercase tracking-widest font-label-caps">Status</span>
-                          <span className="font-mono-data text-xs sm:text-[15px] text-slate-300">Not Started</span>
-                        </div>
-                        <div className="flex flex-col text-right gap-0.5">
-                          <span className="text-[11px] sm:text-[13px] text-on-surface-variant uppercase tracking-widest font-label-caps">Next Step</span>
-                          <span className="font-mono-data text-xs sm:text-[15px] text-primary">Enroll</span>
-                        </div>
-                      </div>
+                      <p className="text-on-surface-variant text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4">{course.description}</p>
                       <div className="mt-auto">
                         <div className="flex justify-between items-center mb-1 sm:mb-2">
-                          <span className="font-label-caps text-[11px] sm:text-[13px] uppercase text-outline">Progress</span>
-                          <span className="font-mono-data text-xs sm:text-[15px] text-primary font-bold">0%</span>
+                          <span className="font-label-caps text-[11px] sm:text-[13px] uppercase text-outline">Delivery</span>
+                          <span className="font-mono-data text-xs sm:text-[15px] text-primary font-bold">PDF via Email</span>
                         </div>
                         <div className="w-full h-1 sm:h-1.5 bg-surface-container rounded-full overflow-hidden">
                           <div className="h-full bg-primary-container transition-all" style={{ width: "0%" }}></div>
@@ -117,7 +95,7 @@ export default function CoursesClient() {
                     </div>
                   </Link>
                   <div className="border-t border-outline-variant/30 grid grid-cols-2">
-                    <Link href={`/blog/${course.slug}`} className="py-1.5 sm:py-3 text-center font-label-caps text-[10px] sm:text-[13px] uppercase border-r border-outline-variant/30 hover:bg-primary-container hover:text-white transition-colors">Course Deck</Link>
+                    <Link href={`/courses/${course.slug}`} className="py-1.5 sm:py-3 text-center font-label-caps text-[10px] sm:text-[13px] uppercase border-r border-outline-variant/30 hover:bg-primary-container hover:text-white transition-colors">View Course</Link>
                     <Link href={`/courses/${course.slug}`} className="py-1.5 sm:py-3 text-center font-label-caps text-[10px] sm:text-[13px] uppercase bg-primary-container/10 text-primary hover:bg-primary-container hover:text-white transition-colors font-bold">Enroll</Link>
                   </div>
                 </div>
@@ -136,7 +114,7 @@ export default function CoursesClient() {
             </p>
             <p className="text-xs mt-1">
               {activeTab === "ALL"
-                ? "Publish posts with the Courses section to see them here."
+                ? "Create a course in the admin dashboard to see it here."
                 : "Enroll in a course to track your progress here."}
             </p>
           </div>

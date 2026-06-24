@@ -28,6 +28,7 @@ export const CourseSchema = z.object({
   price: z.number().int().min(0),
   currency: z.string().length(3).default('NGN'),
   thumbnail: z.string().url().optional().or(z.literal('')),
+  pdfUrl: z.string().url().optional().or(z.literal('')),
   videoUrl: z.string().optional().or(z.literal('')),
   isPublished: z.boolean().default(false),
 })
@@ -57,6 +58,7 @@ export const ToolSchema = z.object({
 export const CheckoutSchema = z.object({
   itemType: z.enum(['COURSE', 'TOOL']),
   itemId: z.string().min(1),
+  email: z.string().email().optional().or(z.literal('')),
 })
 
 export const PaystackWebhookSchema = z.object({

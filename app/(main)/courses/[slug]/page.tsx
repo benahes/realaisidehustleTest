@@ -155,7 +155,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
               </div>
             </div>
 
-            <CourseEnrollClient courseId={course.id} price={course.price} currency={course.currency} title={course.title} />
+            <CourseEnrollClient courseId={course.id} price={course.price} currency={course.currency} />
           </div>
         </aside>
       </div>

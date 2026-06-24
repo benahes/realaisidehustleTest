@@ -9,7 +9,9 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<Record<string, any>>({
     title: '',
@@ -20,6 +22,7 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
     currency: 'NGN',
     category: '',
     thumbnail: '',
+    pdfUrl: '',
     videoUrl: '',
     icon: '',
     externalUrl: '',
@@ -60,6 +63,35 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
     }
   }
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingPdf(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload/pdf/', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!data.success) {
+        setError(data.error || 'PDF upload failed')
+        return
+      }
+
+      handleChange('pdfUrl', data.data.url)
+      e.target.value = ''
+    } catch (err: any) {
+      setError(err.message || 'PDF upload failed')
+    } finally {
+      setUploadingPdf(false)
+    }
+  }
+
   const generateSlug = (text: string) => {
     return text
       .toLowerCase()
@@ -83,6 +115,7 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
       payload.slug = form.slug || generateSlug(form.title || form.name)
       payload.currency = form.currency || 'NGN'
       payload.thumbnail = form.thumbnail || ''
+      payload.pdfUrl = form.pdfUrl || ''
       payload.videoUrl = form.videoUrl || ''
     } else {
       payload.name = form.name || form.title
@@ -237,58 +270,102 @@ export default function CreateAssetModal({ onClose, onCreated }: { onClose: () =
             </div>
           )}
 
-          <div>
-            <label className="font-label-caps text-[10px] text-on-surface-variant block uppercase tracking-wider mb-1">
-              {type === 'COURSE' ? 'Thumbnail' : 'Icon'}
-            </label>
-            {type === 'COURSE' ? (
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={thumbnailInputRef}
-                  onChange={handleThumbnailUpload}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => thumbnailInputRef.current?.click()}
-                  disabled={uploadingThumbnail}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-variant/30 border border-outline-variant/30 hover:border-primary hover:text-primary rounded transition-all disabled:opacity-50"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {uploadingThumbnail ? 'sync' : 'wallpaper'}
-                  </span>
-                  {uploadingThumbnail ? 'Uploading...' : 'Upload Thumbnail'}
-                </button>
-                {form.thumbnail && (
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={form.thumbnail}
-                      alt="Thumbnail preview"
-                      className="w-10 h-10 object-cover rounded border border-outline-variant/30"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {type === 'COURSE' && (
+              <>
+                <div>
+                  <label className="font-label-caps text-[10px] text-on-surface-variant block uppercase tracking-wider mb-1">Thumbnail</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={thumbnailInputRef}
+                      onChange={handleThumbnailUpload}
+                      className="hidden"
                     />
                     <button
                       type="button"
-                      onClick={() => handleChange('thumbnail', '')}
-                      className="text-error hover:text-red-400 material-symbols-outlined text-[18px]"
-                      title="Remove thumbnail"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      disabled={uploadingThumbnail}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-variant/30 border border-outline-variant/30 hover:border-primary hover:text-primary rounded transition-all disabled:opacity-50 w-full justify-center"
                     >
-                      cancel
+                      <span className="material-symbols-outlined text-[18px]">
+                        {uploadingThumbnail ? 'sync' : 'wallpaper'}
+                      </span>
+                      {uploadingThumbnail ? 'Uploading...' : 'Upload Thumbnail'}
                     </button>
+                    {form.thumbnail && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <img
+                          src={form.thumbnail}
+                          alt="Thumbnail preview"
+                          className="w-10 h-10 object-cover rounded border border-outline-variant/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleChange('thumbnail', '')}
+                          className="text-error hover:text-red-400 material-symbols-outlined text-[18px]"
+                          title="Remove thumbnail"
+                        >
+                          cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <label className="font-label-caps text-[10px] text-on-surface-variant block uppercase tracking-wider mb-1">Course PDF</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      ref={pdfInputRef}
+                      onChange={handlePdfUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => pdfInputRef.current?.click()}
+                      disabled={uploadingPdf}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-on-surface bg-surface-variant/30 border border-outline-variant/30 hover:border-primary hover:text-primary rounded transition-all disabled:opacity-50 w-full justify-center"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {uploadingPdf ? 'sync' : 'upload_file'}
+                      </span>
+                      {uploadingPdf ? 'Uploading...' : 'Upload PDF'}
+                    </button>
+                    {form.pdfUrl && (
+                      <div className="flex items-center gap-2 shrink-0 text-primary text-xs font-medium bg-primary/10 px-2 py-1 rounded">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span className="hidden sm:inline">PDF Ready</span>
+                        <button
+                          type="button"
+                          onClick={() => handleChange('pdfUrl', '')}
+                          className="text-error hover:text-red-400 material-symbols-outlined text-[18px]"
+                          title="Remove PDF"
+                        >
+                          cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {type === 'TOOL' && (
+              <div className="sm:col-span-2">
+                <label className="font-label-caps text-[10px] text-on-surface-variant block uppercase tracking-wider mb-1">Icon</label>
+                <input
+                  value={form.icon}
+                  onChange={(e) => handleChange('icon', e.target.value)}
+                  className="w-full bg-surface-variant/30 border border-outline-variant/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                  placeholder="Material icon name"
+                />
               </div>
-            ) : (
-              <input
-                value={form.icon}
-                onChange={(e) => handleChange('icon', e.target.value)}
-                className="w-full bg-surface-variant/30 border border-outline-variant/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
-                placeholder="Material icon name"
-              />
             )}
           </div>
-
           <div className="flex items-center gap-2">
             <input
               id="publish"

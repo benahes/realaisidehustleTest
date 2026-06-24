@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
           price: true,
           currency: true,
           thumbnail: true,
+          pdfUrl: true,
           isPublished: true,
           createdAt: true,
         },

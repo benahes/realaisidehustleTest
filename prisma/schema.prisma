@@ -98,6 +98,7 @@ model Course {
   price       Int       // Naira (kobo) or USD (cents)
   currency    String    @default("NGN")
   thumbnail   String?
+  pdfUrl      String?
   videoUrl    String?   // Cloudflare Stream ID
   modules     Module[]
   isPublished Boolean   @default(false)
@@ -166,6 +167,7 @@ model Purchase {
   status        PaymentStatus @default(PENDING)
   paystackRef   String?       // transaction reference
   flutterRef    String?
+  deliveryEmail String?       // email address for PDF delivery
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }

@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-helpers";
 import { requireAdmin } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { createClient } from "@/lib/supabase/server";
 import { ZodError } from "zod";
 
 // GET /api/courses/[id] — single course (public preview, full if purchased)
@@ -30,13 +31,31 @@ export async function GET(
       return errorResponse("Course not found", 404);
     }
 
-    // Return preview for non-purchasers (modules stripped of video URLs)
+    // Check if authenticated user has purchased the course
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    let hasPurchased = false;
+    if (user) {
+      const dbUser = await prisma.user.findUnique({
+        where: { supabaseUid: user.id },
+        select: { id: true },
+      });
+      if (dbUser) {
+        const purchase = await prisma.purchase.findFirst({
+          where: { userId: dbUser.id, courseId: id, status: "SUCCESS" },
+        });
+        hasPurchased = !!purchase;
+      }
+    }
+
+    // Return preview for non-purchasers (modules stripped of video URLs and pdfUrl hidden)
     const { searchParams } = new URL(req.url);
     const preview = searchParams.get("preview") === "true";
 
-    if (preview) {
+    if (preview || !hasPurchased) {
       return successResponse({
         ...course,
+        pdfUrl: null,
         modules: course.modules.map((m) => ({ ...m, videoUrl: null })),
       });
     }

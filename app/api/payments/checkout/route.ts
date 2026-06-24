@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await validateBody(req, CheckoutSchema);
-    const { itemType, itemId } = body;
+    const { itemType, itemId, email } = body;
+    const deliveryEmail = email?.trim() || user.email;
 
     // Verify item exists and fetch price
     let item: any;
@@ -70,12 +71,13 @@ export async function POST(req: NextRequest) {
         currency: item.currency || "NGN",
         status: "PENDING",
         paystackRef: reference,
+        deliveryEmail,
       },
     });
 
     // Initialize Paystack transaction
     const paystackData = await initializeTransaction({
-      email: user.email,
+      email: deliveryEmail,
       amount: item.price,
       reference,
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/verify`,

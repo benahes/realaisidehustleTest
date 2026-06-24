@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { successResponse, errorResponse } from '@/lib/api-helpers'
 import { verifyTransaction } from '@/lib/paystack'
+import { sendPdfDeliveryEmail } from '@/lib/email'
 
 // GET /api/payments/verify?reference=...
 export async function GET(req: NextRequest) {
@@ -28,6 +29,24 @@ export async function GET(req: NextRequest) {
 
     if (updated.count === 0) {
       return errorResponse('Purchase record not found', 404)
+    }
+
+    // For course purchases with a PDF, deliver it via email
+    const purchase = await prisma.purchase.findFirst({
+      where: { paystackRef: reference },
+      include: { course: true },
+    })
+
+    if (purchase?.course?.pdfUrl && purchase.deliveryEmail) {
+      try {
+        await sendPdfDeliveryEmail(
+          purchase.deliveryEmail,
+          purchase.course.title,
+          purchase.course.pdfUrl,
+        )
+      } catch (emailErr: any) {
+        console.error('[VERIFY] PDF delivery email failed:', emailErr)
+      }
     }
 
     return successResponse({

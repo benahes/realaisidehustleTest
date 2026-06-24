@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 interface CourseEnrollClientProps {
   courseId: string;
   price: number;
   currency: string;
-  title: string;
 }
 
-export default function CourseEnrollClient({ courseId, price, currency, title }: CourseEnrollClientProps) {
-  const router = useRouter();
+export default function CourseEnrollClient({ courseId, price, currency }: CourseEnrollClientProps) {
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,14 +17,20 @@ export default function CourseEnrollClient({ courseId, price, currency, title }:
     ? `₦${(price / 100).toLocaleString()}`
     : `$${(price / 100).toFixed(2)}`;
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   const handleEnroll = async () => {
-    setLoading(true);
     setError("");
+    if (!email.trim() || !isValidEmail(email.trim())) {
+      setError("Please enter a valid email address for PDF delivery.");
+      return;
+    }
+    setLoading(true);
     try {
       const res = await fetch("/api/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemType: "COURSE", itemId: courseId }),
+        body: JSON.stringify({ itemType: "COURSE", itemId: courseId, email: email.trim() }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.data?.authorizationUrl) {
@@ -48,6 +52,19 @@ export default function CourseEnrollClient({ courseId, price, currency, title }:
           {error}
         </div>
       )}
+      <div>
+        <label htmlFor="course-email" className="text-[10px] sm:text-xs font-label-caps uppercase text-on-surface-variant block mb-1.5">
+          Email for PDF delivery
+        </label>
+        <input
+          id="course-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="w-full bg-surface-container border border-outline-variant/50 rounded-lg px-3 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-primary focus:outline-none transition-colors"
+        />
+      </div>
       <button
         onClick={handleEnroll}
         disabled={loading}
@@ -66,7 +83,7 @@ export default function CourseEnrollClient({ courseId, price, currency, title }:
         )}
       </button>
       <p className="text-on-surface-variant text-[10px] sm:text-xs text-center">
-        Secure payment via Paystack. You will be redirected to complete your purchase.
+        Secure payment via Paystack. The course PDF will be emailed to you after successful payment.
       </p>
     </div>
   );

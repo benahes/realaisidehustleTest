@@ -12,20 +12,6 @@ interface PreviewPanelProps {
   onRefresh: () => void
 }
 
-function timeAgo(dateStr: string | Date) {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 function readTime(content: string) {
   const words = content?.split(/\s+/).filter(Boolean).length || 0
   return Math.max(1, Math.ceil(words / 200))
@@ -134,7 +120,7 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
             <div className="space-y-stack-mid">
               <div className="flex justify-between items-center py-stack-tight border-b border-outline-variant/30">
                 <span className="text-on-surface-variant text-body-xs">Read Time</span>
-                <span className="font-mono-data text-mono-data text-on-surface">{readTime} MIN</span>
+                <span className="font-mono-data text-mono-data text-on-surface">{rTime} MIN</span>
               </div>
               <div className="flex justify-between items-center py-stack-tight border-b border-outline-variant/30">
                 <span className="text-on-surface-variant text-body-xs">Word Count</span>

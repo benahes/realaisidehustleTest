@@ -1,10 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { toast } from '@/components/admin/Toast'
-import { markdownToHtml } from '@/lib/markdown'
-import ArticleBody from '@/app/(main)/blog/[slug]/ArticleBody'
 
 interface PreviewPanelProps {
   post: any
@@ -13,23 +10,20 @@ interface PreviewPanelProps {
   onRefresh: () => void
 }
 
-function timeAgo(dateStr: string | Date) {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-function readTime(content: string) {
-  const words = content?.split(/\s+/).filter(Boolean).length || 0
-  return Math.max(1, Math.ceil(words / 200))
+function simpleMarkdownToHtml(md: string): string {
+  return md
+    .replace(/^### (.*$)/gim, '<h3 class="font-h3 text-h3 text-on-surface mt-8 mb-4 border-l-4 border-primary pl-4">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="font-h2 text-h2 text-on-surface mt-8 mb-4 border-l-4 border-primary pl-4">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="font-h1 text-h1 text-on-surface mt-8 mb-4">$1</h1>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-on-surface font-semibold">$1</strong>')
+    .replace(/\*(.*?)\*/gim, '<em class="italic text-on-surface-variant">$1</em>')
+    .replace(/^> (.*$)/gim, '<blockquote class="bg-surface-container-low p-4 rounded-lg border-l-2 border-primary italic text-on-surface my-6">$1</blockquote>')
+    .replace(/^- (.*$)/gim, '<li class="ml-6 list-disc text-on-surface-variant py-1">$1</li>')
+    .replace(/^\d+\. (.*$)/gim, '<li class="ml-6 list-decimal text-on-surface-variant py-1">$1</li>')
+    .replace(/!\[(.*?)\]\((.*?)\)/gim, "<img alt='$1' src='$2' class='w-full h-auto max-h-[35vh] sm:max-h-[70vh] rounded-xl border border-outline-variant/30 my-8 article-shadow object-contain bg-surface-container-lowest/50 block mx-auto' />")
+    .replace(/```([\s\S]*?)```/gim, '<pre class="bg-surface-container-low p-4 rounded-lg border border-outline-variant overflow-x-auto my-6 font-mono-data text-sm text-primary"><code>$1</code></pre>')
+    .replace(/`([^`]+)`/gim, '<code class="bg-surface-container-low px-1.5 py-0.5 rounded text-primary font-mono-data text-sm">$1</code>')
+    .replace(/\n/gim, '<br/>')
 }
 
 export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: PreviewPanelProps) {
@@ -42,8 +36,9 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const rTime = readTime(post.content || '')
-  const htmlContent = markdownToHtml(post.content || '')
+  const wordCount = post.content?.split(/\s+/).filter(Boolean).length ?? 0
+  const readTime = Math.max(1, Math.ceil(wordCount / 200))
+  const seoScore = Math.min(100, Math.max(60, 70 + (post.tags?.length || 0) * 5 + (post.coverImage ? 10 : 0)))
 
   const handlePublish = async () => {
     if (post.published) {
@@ -126,84 +121,82 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
         </div>
       </header>
 
-      <main className="max-w-container-max mx-auto px-2 sm:px-3 pb-6 pt-4">
-        <section className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
-          <header className="mb-4 sm:mb-6">
-            <h1 className="font-h1 text-[22px] sm:text-[32px] lg:text-[40px] leading-tight text-on-surface mb-3 sm:mb-6 tracking-tight">
+      <main className="relative min-h-screen pt-8 pb-24 px-margin-edge flex justify-center">
+        <aside className="hidden xl:flex flex-col gap-y-stack-loose w-48 sticky top-24 self-start">
+          <div className="glass-panel p-stack-loose rounded-xl border-l-2 border-l-primary">
+            <h3 className="font-label-caps text-label-caps uppercase text-primary mb-stack-mid">Core Metrics</h3>
+            <div className="space-y-stack-mid">
+              <div className="flex justify-between items-center py-stack-tight border-b border-outline-variant/30">
+                <span className="text-on-surface-variant text-body-xs">Read Time</span>
+                <span className="font-mono-data text-mono-data text-on-surface">{readTime} MIN</span>
+              </div>
+              <div className="flex justify-between items-center py-stack-tight border-b border-outline-variant/30">
+                <span className="text-on-surface-variant text-body-xs">Word Count</span>
+                <span className="font-mono-data text-mono-data text-on-surface">{wordCount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-stack-tight">
+                <span className="text-on-surface-variant text-body-xs">SEO Score</span>
+                <span className="font-mono-data text-mono-data text-tertiary">{seoScore}/100</span>
+              </div>
+            </div>
+          </div>
+          <div className="p-stack-loose">
+            <h3 className="font-label-caps text-label-caps uppercase text-on-surface-variant mb-stack-mid">Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {(post.tags || []).map((tag: string) => (
+                <span key={tag} className="px-2 py-1 bg-surface-container text-body-xs rounded border border-outline-variant">{tag}</span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <article className="w-full max-w-3xl flex flex-col gap-y-12 mx-gutter">
+          <header className="flex flex-col gap-y-stack-loose">
+            <div className="flex items-center gap-x-2 text-primary">
+              <span className="font-label-caps text-label-caps uppercase tracking-widest">{post.category}</span>
+              <span className="w-1 h-1 rounded-full bg-outline"></span>
+              <span className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+                {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+            <h1 className="font-h1 text-[42px] leading-tight text-on-surface tracking-tighter">
               {post.title}
             </h1>
-            <div className="flex items-center justify-between border-y border-outline-variant/30 py-2 sm:py-4 flex-wrap gap-2 sm:gap-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-outline-variant bg-primary-container/30 flex items-center justify-center text-primary overflow-hidden">
-                  {post.author?.avatarUrl ? (
-                    <Image src={post.author.avatarUrl} alt={post.author.name || ''} width={40} height={40} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="font-bold text-[10px] sm:text-sm">{post.author?.name?.charAt(0).toUpperCase() || 'A'}</span>
-                  )}
+            <div className="flex items-center gap-x-stack-loose mt-stack-mid">
+              <div className="flex items-center gap-x-2">
+                <div className="w-6 h-6 rounded-full bg-secondary-container border border-outline-variant flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[14px] text-on-secondary-container">person</span>
                 </div>
-                <div>
-                  <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">{post.author?.name || post.author?.email || 'Admin'}</p>
-                  <p className="text-[9px] sm:text-body-xs text-on-surface-variant">{timeAgo(post.createdAt)}</p>
-                </div>
+                <span className="font-body-sm font-medium text-on-surface">
+                  {post.author?.name || post.author?.email || 'Admin'}
+                </span>
               </div>
-              <div className="flex items-center gap-1 sm:gap-stack-mid">
-                <span className="text-[9px] sm:text-body-xs font-mono-data text-outline flex items-center gap-1 mr-2 sm:mr-4">
-                  <span className="material-symbols-outlined text-[12px] sm:text-[14px]">schedule</span> {rTime} min read
-                </span>
-                <span className="text-[9px] sm:text-body-xs font-mono-data text-outline flex items-center gap-1 mr-2 sm:mr-4">
-                  <span className="material-symbols-outlined text-[12px] sm:text-[14px]">visibility</span> Preview
-                </span>
+              <div className="w-px h-4 bg-outline-variant"></div>
+              <div className="flex items-center gap-x-1 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px]">visibility</span>
+                <span className="text-body-xs">Preview Mode</span>
               </div>
             </div>
           </header>
 
           {post.coverImage && (
-            <div className="relative w-full aspect-video rounded-lg sm:rounded-xl overflow-hidden border border-outline-variant/30 mb-4 sm:mb-8 article-shadow">
-              <Image src={post.coverImage} alt={post.title} fill className="object-cover" priority unoptimized />
+            <div className="relative group aspect-video rounded-xl overflow-hidden border border-outline-variant shadow-2xl">
+              <img
+                alt="Cover"
+                className="w-full h-full object-cover"
+                src={post.coverImage}
+              />
             </div>
           )}
 
-          <ArticleBody content={htmlContent} />
+          <div
+            className="flex flex-col gap-y-stack-loose text-on-surface-variant text-[16px] leading-[1.7] font-body-sm"
+            dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(post.content || '') }}
+          />
 
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-3 sm:pt-6 mt-4 sm:mt-8 border-t border-outline-variant/30">
-              <span className="text-[10px] sm:text-body-xs text-outline font-mono-data uppercase">Tags:</span>
-              {post.tags.map((tag: string) => (
-                <span key={tag} className="bg-surface-container-high text-on-surface-variant border border-outline-variant/20 rounded-sm px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-body-xs font-medium">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-8 sm:mt-16 flex items-stretch border border-outline-variant rounded-lg sm:rounded-xl overflow-hidden bg-surface-container-lowest">
-            <div className="flex-1 p-3 sm:p-6 border-r border-outline-variant opacity-50">
-              <p className="text-[9px] sm:text-[10px] font-label-caps text-outline uppercase mb-1 sm:mb-2">Previous Entry</p>
-              <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">—</p>
-            </div>
-            <div className="flex-1 p-3 sm:p-6 opacity-50 text-right">
-              <p className="text-[9px] sm:text-[10px] font-label-caps text-outline uppercase mb-1 sm:mb-2">Next Entry</p>
-              <p className="font-h2 text-[10px] sm:text-body-sm text-on-surface">—</p>
-            </div>
-          </div>
-
-          <section className="mt-8 sm:mt-16 pb-4 sm:pb-8">
-            <div className="flex items-center justify-between mb-3 sm:mb-8">
-              <h2 className="font-h1 text-[16px] sm:text-h1 text-on-surface">Discussion</h2>
-              <button className="bg-primary text-on-primary px-2 sm:px-4 py-1 sm:py-1.5 font-label-caps rounded-full text-[10px] sm:text-[12px] flex items-center gap-1 sm:gap-2">
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">edit</span> Post Response
-              </button>
-            </div>
-            <p className="text-[10px] sm:text-body-sm text-on-surface-variant">Comments are coming soon.</p>
-          </section>
-
-          <footer className="mt-8 sm:mt-12 glass-panel p-stack-loose rounded-xl flex items-center gap-x-stack-loose">
-            <div className="w-16 h-16 rounded-xl bg-secondary-container border border-outline-variant flex items-center justify-center shrink-0">
-              {post.author?.avatarUrl ? (
-                <Image src={post.author.avatarUrl} alt={post.author.name || ''} width={64} height={64} className="w-full h-full object-cover" unoptimized />
-              ) : (
-                <span className="material-symbols-outlined text-on-secondary-container text-[32px]">person</span>
-              )}
+          <footer className="mt-12 glass-panel p-stack-loose rounded-xl flex items-center gap-x-stack-loose">
+            <div className="w-16 h-16 rounded-xl bg-secondary-container border border-outline-variant flex items-center justify-center">
+              <span className="material-symbols-outlined text-on-secondary-container text-[32px]">person</span>
             </div>
             <div>
               <h4 className="font-h2 text-h2 text-on-surface">{post.author?.name || post.author?.email || 'Admin'}</h4>
@@ -212,7 +205,7 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
               </p>
             </div>
           </footer>
-        </section>
+        </article>
       </main>
     </div>
   )

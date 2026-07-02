@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from '@/components/admin/Toast'
+import { markdownToHtml } from '@/lib/markdown'
+import PreviewArticleBody from '@/components/admin/PreviewArticleBody'
 
 interface PreviewPanelProps {
   post: any
@@ -10,20 +12,23 @@ interface PreviewPanelProps {
   onRefresh: () => void
 }
 
-function simpleMarkdownToHtml(md: string): string {
-  return md
-    .replace(/^### (.*$)/gim, '<h3 class="font-h3 text-h3 text-on-surface mt-8 mb-4 border-l-4 border-primary pl-4">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="font-h2 text-h2 text-on-surface mt-8 mb-4 border-l-4 border-primary pl-4">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 class="font-h1 text-h1 text-on-surface mt-8 mb-4">$1</h1>')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-on-surface font-semibold">$1</strong>')
-    .replace(/\*(.*?)\*/gim, '<em class="italic text-on-surface-variant">$1</em>')
-    .replace(/^> (.*$)/gim, '<blockquote class="bg-surface-container-low p-4 rounded-lg border-l-2 border-primary italic text-on-surface my-6">$1</blockquote>')
-    .replace(/^- (.*$)/gim, '<li class="ml-6 list-disc text-on-surface-variant py-1">$1</li>')
-    .replace(/^\d+\. (.*$)/gim, '<li class="ml-6 list-decimal text-on-surface-variant py-1">$1</li>')
-    .replace(/!\[(.*?)\]\((.*?)\)/gim, "<img alt='$1' src='$2' class='w-full h-auto max-h-[35vh] sm:max-h-[70vh] rounded-xl border border-outline-variant/30 my-8 article-shadow object-contain bg-surface-container-lowest/50 block mx-auto' />")
-    .replace(/```([\s\S]*?)```/gim, '<pre class="bg-surface-container-low p-4 rounded-lg border border-outline-variant overflow-x-auto my-6 font-mono-data text-sm text-primary"><code>$1</code></pre>')
-    .replace(/`([^`]+)`/gim, '<code class="bg-surface-container-low px-1.5 py-0.5 rounded text-primary font-mono-data text-sm">$1</code>')
-    .replace(/\n/gim, '<br/>')
+function timeAgo(dateStr: string | Date) {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function readTime(content: string) {
+  const words = content?.split(/\s+/).filter(Boolean).length || 0
+  return Math.max(1, Math.ceil(words / 200))
 }
 
 export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: PreviewPanelProps) {
@@ -37,8 +42,9 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
   }, [])
 
   const wordCount = post.content?.split(/\s+/).filter(Boolean).length ?? 0
-  const readTime = Math.max(1, Math.ceil(wordCount / 200))
+  const rTime = readTime(post.content || '')
   const seoScore = Math.min(100, Math.max(60, 70 + (post.tags?.length || 0) * 5 + (post.coverImage ? 10 : 0)))
+  const htmlContent = markdownToHtml(post.content || '')
 
   const handlePublish = async () => {
     if (post.published) {
@@ -173,6 +179,11 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
               </div>
               <div className="w-px h-4 bg-outline-variant"></div>
               <div className="flex items-center gap-x-1 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px]">schedule</span>
+                <span className="text-body-xs">{rTime} min read</span>
+              </div>
+              <div className="w-px h-4 bg-outline-variant"></div>
+              <div className="flex items-center gap-x-1 text-on-surface-variant">
                 <span className="material-symbols-outlined text-[16px]">visibility</span>
                 <span className="text-body-xs">Preview Mode</span>
               </div>
@@ -189,10 +200,7 @@ export default function PreviewPanel({ post, onExit, onEdit, onRefresh }: Previe
             </div>
           )}
 
-          <div
-            className="flex flex-col gap-y-stack-loose text-on-surface-variant text-[16px] leading-[1.7] font-body-sm"
-            dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(post.content || '') }}
-          />
+          <PreviewArticleBody content={htmlContent} />
 
           <footer className="mt-12 glass-panel p-stack-loose rounded-xl flex items-center gap-x-stack-loose">
             <div className="w-16 h-16 rounded-xl bg-secondary-container border border-outline-variant flex items-center justify-center">
